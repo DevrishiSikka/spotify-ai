@@ -1,44 +1,25 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 const useGeminiPlaylist = () => {
   const [userMood, setUserMood] = useState("");
   const [inputValue, setInputValue] = useState(""); // Temporary input value
   const [playlist, setPlaylist] = useState([]);
   const [error, setError] = useState(null);
+  const [showResults, setShowResults] = useState(false);
 
   const fetchPlaylist = async () => {
-    const url = "https://spotify-gemini-backend.onrender.com/api/generate"; // Proxy server URL
-
-    const masterPrompt = `
-      i need a json in the below format and i will give you a mood and you will give me a playlist of 10 songs in the below format:
-      User mood: ${userMood}
-      Return the data strictly in the following JSON format:
-      [
-        {
-          "title": "Song Title",
-          "artist": "Artist Name",
-          "album": "Album Name",
-          "duration": "4:30",
-          "days": "2 days ago"
-        }
-      ]
-    `;
-
-    const payload = {
-      prompt: masterPrompt,
-      temperature: 0.7,
-      maxOutputTokens: 500,
-    };
+    const url = "https://spotify-gemini-backend.onrender.com/api/generate";
 
     try {
-      console.log("Request payload being sent to API:", payload); // Log the request data
+      console.log("Sending request to API with prompt:", userMood);
 
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ mood: userMood }), // Send only the userMood as the prompt
       });
 
       console.log("Raw response from API:", res);
@@ -50,19 +31,9 @@ const useGeminiPlaylist = () => {
       const data = await res.json();
       console.log("Parsed response data from API:", data);
 
-      // Extract raw text response
-      const rawText = data?.candidates?.[0]?.output || "";
-      console.log("Raw text output from API:", rawText);
-
-      // Parse JSON portion
-      const jsonStart = rawText.indexOf("[");
-      const jsonEnd = rawText.lastIndexOf("]");
-      const jsonString = rawText.slice(jsonStart, jsonEnd + 1);
-
-      const parsedPlaylist = JSON.parse(jsonString);
-      console.log("Parsed playlist:", parsedPlaylist);
-
-      setPlaylist(parsedPlaylist);
+      setPlaylist(data); // Assuming the API directly returns the playlist JSON
+      setError(null);
+      setShowResults(true);
     } catch (err) {
       console.error("Error fetching playlist:", err);
       setError(err);
@@ -86,7 +57,35 @@ const useGeminiPlaylist = () => {
     error,
     inputValue,
     setInputValue,
+    showResults,
+    handleKeyPress,
+    setUserMood, // Include setUserMood in the return statement
   };
 };
 
-export default useGeminiPlaylist;
+const GeminiPlaylistComponent = ({ playlist, showResults }) => {
+  if (showResults && playlist.length > 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="min-h-screen w-full flex flex-col bg-black text-white"
+      >
+        {/* Render playlist data */}
+        <div>
+          {playlist.map((song, index) => (
+            <div key={index}>
+              <p>
+                {song.title} by {song.artist}
+              </p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+  return null;
+};
+
+export { useGeminiPlaylist, GeminiPlaylistComponent };
