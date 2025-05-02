@@ -31,6 +31,8 @@ const useGeminiPlaylist = () => {
     };
 
     try {
+      console.log("Request payload being sent to API:", payload); // Log the request data
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -39,16 +41,18 @@ const useGeminiPlaylist = () => {
         body: JSON.stringify(payload),
       });
 
+      console.log("Raw response from API:", res);
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
       const data = await res.json();
-      console.log("Parsed response data:", data);
+      console.log("Parsed response data from API:", data);
 
       // Extract raw text response
       const rawText = data?.candidates?.[0]?.output || "";
-      console.log("Raw text output:", rawText);
+      console.log("Raw text output from API:", rawText);
 
       // Parse JSON portion
       const jsonStart = rawText.indexOf("[");
@@ -56,6 +60,8 @@ const useGeminiPlaylist = () => {
       const jsonString = rawText.slice(jsonStart, jsonEnd + 1);
 
       const parsedPlaylist = JSON.parse(jsonString);
+      console.log("Parsed playlist:", parsedPlaylist);
+
       setPlaylist(parsedPlaylist);
     } catch (err) {
       console.error("Error fetching playlist:", err);
