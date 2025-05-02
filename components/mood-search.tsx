@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Search, Heart, Clock, Play, Download, ListMusic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
@@ -93,35 +94,83 @@ const MoodSearch = () => {
   if (showResults && playlist.length > 0) {
     return (
       <div className="min-h-screen w-full bg-black text-white">
-        <div className="w-full max-w-6xl mx-auto py-8">
-          <h1 className="text-4xl font-bold mb-6">Your AI-Generated Playlist</h1>
-          <table className="table-auto w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-700">
-                <th className="py-3 px-4 text-gray-400">#</th>
-                <th className="py-3 px-4 text-gray-400">Title</th>
-                <th className="py-3 px-4 text-gray-400">Artist</th>
-                <th className="py-3 px-4 text-gray-400">Album</th>
-                <th className="py-3 px-4 text-gray-400">Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {playlist.map((song, index) => (
-                <tr
-                  key={index}
-                  className={`hover:bg-gray-800 ${
-                    index % 2 === 0 ? "bg-gray-900" : "bg-gray-800"
-                  }`}
-                >
-                  <td className="py-3 px-4">{index + 1}</td>
-                  <td className="py-3 px-4">{song.title}</td>
-                  <td className="py-3 px-4">{song.artist}</td>
-                  <td className="py-3 px-4">{song.album}</td>
-                  <td className="py-3 px-4">{song.duration}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Playlist header - with reduced height */}
+        <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3">
+          <div className="px-8 flex items-end gap-6">
+            {/* Playlist cover art - reduced size */}
+            <div className="w-48 h-48 bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg">
+              <Heart className="w-24 h-24 text-white fill-white" />
+            </div>
+            <div>
+              <div className="text-xs mb-1">Playlist</div>
+              {/* Smaller title */}
+              <h1 className="text-6xl font-bold mb-3">{inputValue}</h1>
+              <div className="flex items-center gap-1 text-xs">
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">DS</span>
+                </div>
+                <span className="font-bold">Devrishi Sikka</span>
+                <span className="text-gray-400">• {playlist.length} songs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Playlist controls - reduced vertical spacing */}
+        <div className="flex items-center gap-6 mb-3 mt-2 px-4">
+          <div className="w-12 h-12 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
+            <Play className="w-6 h-6 text-black fill-black ml-1" />
+          </div>
+          <Download className="w-7 h-7 text-gray-400 hover:text-white cursor-pointer" />
+          <div className="ml-auto flex items-center gap-4">
+            <Search className="w-4 h-4 text-gray-400" />
+            <div className="text-xs text-gray-400">List</div>
+            <ListMusic className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+
+        {/* Songs table - adjusted for more visible songs */}
+        <div className="w-full">
+          <div className="grid grid-cols-[40px_1fr_1fr_auto_auto] gap-4 border-b border-[#2a2a2a] px-4 py-1 text-xs text-gray-400">
+            <div className="text-center">#</div>
+            <div>Title</div>
+            <div>Album</div>
+            <div>Date added</div>
+            <div>
+              <Clock className="w-4 h-4" />
+            </div>
+          </div>
+
+          {/* Scrollable Songs List - increased max height */}
+          <div 
+            className="overflow-y-auto max-h-[calc(100vh-350px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
+            style={{ paddingBottom: "120px" }}
+          >
+            {playlist.map((song, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-[40px_1fr_1fr_auto_auto] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center"
+              >
+                <div className="text-gray-400 text-right pr-2">
+                  {index + 1}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 relative bg-gray-700 flex items-center justify-center">
+                    <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium">{song.title}</div>
+                    <div className="text-gray-400 text-xs">
+                      {song.artist}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-gray-400">{song.album}</div>
+                <div className="text-gray-400">{song.days || '2 days ago'}</div>
+                <div className="text-gray-400">{song.duration}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
