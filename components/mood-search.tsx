@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { 
   Search, Heart, Clock, Play, Download, 
@@ -17,6 +17,13 @@ const MoodSearch = ({ moodQuery, setMoodQuery }) => {
   const [isGenerating, setIsGenerating] = useState(false)
 
   const { playlist, error } = useGeminiPlaylist(moodQuery)
+
+  // Log the playlist data whenever it updates
+  useEffect(() => {
+    if (playlist.length > 0) {
+      console.log("Playlist data from API:", playlist)
+    }
+  }, [playlist])
 
   const premadePrompts = [
     "Hindi Pop",
@@ -83,122 +90,16 @@ const MoodSearch = ({ moodQuery, setMoodQuery }) => {
         transition={{ duration: 0.3 }}
         className="min-h-screen w-full flex flex-col bg-black text-white"
       >
-        {/* Hero section with gradient and playlist info */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-gradient-to-b from-purple-800 to-black pt-6 pb-6"
-        >
-          <div className="px-8 flex items-end gap-6">
-            {/* Playlist cover art */}
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="w-60 h-60 bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center"
-            >
-              <Heart className="w-28 h-28 text-white" />
-            </motion.div>
-            
-            {/* Playlist info */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
-              <p className="text-sm mb-2">Playlist</p>
-              <h1 className="text-8xl font-bold mb-6">{moodQuery}</h1>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-6 h-6 rounded-full bg-white overflow-hidden flex items-center justify-center">
-                  <span className="text-xs font-bold text-black">AI</span>
-                </div>
-                <span className="text-sm">Spotify AI</span>
-                <span className="text-sm">• {playlist.length} songs</span>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-        
-        {/* Controls section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.5 }}
-          className="px-8 py-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center">
-                <Play className="w-6 h-6 text-black" fill="black" />
-              </button>
-              <button className="p-2">
-                <Download className="w-8 h-8 text-gray-400" />
-              </button>
+        {/* Render playlist data */}
+        <div>
+          {playlist.map((song, index) => (
+            <div key={index}>
+              <p>
+                {song.title} by {song.artist}
+              </p>
             </div>
-
-            {/* Add to Library button shifted to the right */}
-            <div className="ml-auto">
-              <button className="px-4 py-2 bg-white text-black font-bold rounded-md hover:bg-gray-200 transition-colors">
-                Add to Library
-              </button>
-            </div>
-          </div>
-        </motion.div>
-        
-        {/* Songs table with proper scrolling - always show all songs */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="flex flex-col px-8 overflow-hidden flex-1" // Flexbox ensures it takes available space
-        >
-          {/* Fixed Table header */}
-          <div className="grid grid-cols-[auto,4fr,2fr,1fr,auto] gap-4 border-b border-[#282828] py-2 text-gray-400 text-sm bg-black z-10 sticky top-0">
-            <div className="text-center w-6">#</div>
-            <div className="pl-14">Title</div>
-            <div>Album</div>
-            <div>Date added</div>
-            <div className="flex justify-end pr-8">
-              <Clock className="w-4 h-4" />
-            </div>
-          </div>
-          
-          {/* Scrollable Table rows */}
-          <div 
-            className="overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
-            style={{ maxHeight: "calc(100vh - 570px)" }} // Adjust height dynamically
-          > 
-            {playlist.map((song, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="grid grid-cols-[auto,4fr,2fr,1fr,auto] gap-4 py-[10px] hover:bg-[#181818] rounded text-sm items-center group"
-              >
-                <div className="text-center text-gray-400 group-hover:hidden w-6">{index + 1}</div>
-                <div className="hidden group-hover:flex group-hover:items-center group-hover:justify-center w-6">
-                  <Play className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-700 flex-shrink-0"></div>
-                  <div>
-                    <div className="text-white font-normal">{song.title}</div>
-                    <div className="text-gray-400">{song.artist}</div>
-                  </div>
-                </div>
-                <div className="text-gray-400">{song.album}</div>
-                <div className="text-gray-400">{song.duration}</div>
-              </motion.div>
-            ))}
-          </div>
-          
-          {/* Song count indicator */}
-          <div className="py-1 border-t border-[#282828] text-xs text-gray-400 bg-black sticky bottom-0 z-10">
-            Showing all {playlist.length} songs
-          </div>
-        </motion.div>
+          ))}
+        </div>
       </motion.div>
     )
   }
