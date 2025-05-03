@@ -461,15 +461,15 @@ export default function SpotifyClone() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col ml-2">
           {/* Existing Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden rounded-md" >
             <div className="flex flex-1 overflow-hidden">
               {/* Scrollable Liked Songs Section */}
               <div className="flex-1 overflow-y-auto bg-black">
                 {showMoodSearch ? (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
-                    <div className="w-full  mx-auto flex items-center justify-center">
+                    <div className="w-full mx-auto flex items-center justify-center">
                       <MoodSearch
                         moodQuery={moodQuery}
                         setMoodQuery={setMoodQuery}

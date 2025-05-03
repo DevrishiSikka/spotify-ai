@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGeminiPlaylist } from "@/hooks/useGeminiPlaylist";
+import AudioWaveform from "@/components/AudioWaveform";
 
 const MoodSearch = () => {
   const router = useRouter();
@@ -87,13 +88,16 @@ const MoodSearch = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center"
         >
-          <Loader2 className="w-16 h-16 animate-spin text-green-500 mb-6" />
-          <h2 className="text-2xl font-bold mb-3">
-            {isLoadingArtwork ? "Fetching Album Artwork" : "Creating Your Playlist"}
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-8 text-center">
+            Crafting your vibe...
           </h2>
+          {/* Use the AudioWaveform component */}
+          <div className="mb-8">
+            <AudioWaveform />
+          </div>
           <p className="text-gray-300 mb-6 text-center max-w-md">
-            {isLoadingArtwork 
-              ? "Adding album covers to enhance your experience..." 
+            {isLoadingArtwork
+              ? "Adding album covers to enhance your experience..."
               : `Our AI is curating songs based on "${inputValue}"`}
           </p>
         </motion.div>
