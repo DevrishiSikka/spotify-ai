@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Search, Heart, Clock, Play, Download, ListMusic, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGeminiPlaylist } from "@/hooks/useGeminiPlaylist";
 
 const MoodSearch = () => {
@@ -20,8 +20,8 @@ const MoodSearch = () => {
     handleKeyPress,
     setUserMood,
     isLoadingArtwork,
-    playlistName,        // Get this from the hook instead of local state
-    isGeneratingName     // Get this from the hook instead of local state
+    playlistName,
+    isGeneratingName
   } = useGeminiPlaylist();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,7 +36,7 @@ const MoodSearch = () => {
   ];
 
   const handlePromptClick = (prompt) => {
-    setInputValue(prompt); // Update the input value with the selected prompt
+    setInputValue(prompt);
   };
 
   const onSubmit = (e) => {
@@ -47,20 +47,20 @@ const MoodSearch = () => {
     }
     console.log("Form submitted with inputValue:", inputValue);
     setIsGenerating(true);
-    setUserMood(inputValue); // Update userMood to trigger the API call
+    setUserMood(inputValue);
   };
 
   useEffect(() => {
     if (playlist.length > 0 && !isLoadingArtwork) {
       console.log("Playlist data from API:", playlist);
-      setIsGenerating(false); // Stop the loading state when the playlist is ready
+      setIsGenerating(false);
     }
   }, [playlist, isLoadingArtwork]);
 
   useEffect(() => {
     if (error) {
       console.error("Error from API:", error.message);
-      setIsGenerating(false); // Stop the loading state if an error occurs
+      setIsGenerating(false);
     }
   }, [error]);
 
@@ -103,131 +103,127 @@ const MoodSearch = () => {
 
   if (showResults && playlist.length > 0) {
     return (
-      <div className="min-h-screen w-full bg-black text-white">
-        {/* Playlist header - with reduced height */}
-        <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3">
-          <div className="px-8 flex items-end gap-6 relative">
-            {/* Playlist cover art - fixed square dimensions */}
-            <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg">
-              <Heart className="w-24 h-24 text-white fill-white" />
-            </div>
-            <div className="flex flex-col flex-grow">
-              <div className="text-xs mb-1">Playlist</div>
-              {/* Display AI-generated playlist name */}
-              <h1 className="text-7xl font-extrabold mb-3">
-                {isGeneratingName ? (
-                  <div className="flex items-center gap-2">
-                    <span className="opacity-70">Naming playlist...</span>
-                    <Loader2 className="w-6 h-6 animate-spin" />
+      <div className="min-h-screen w-full bg-black text-white overflow-x-hidden flex">
+        {/* Sidebar placeholder (match the sidebar width used elsewhere, e.g., w-60) */}
+        <div className="w-2 flex-shrink-0" /> {/* Even smaller sidebar gap */}
+        {/* Main playlist section with left margin for gap */}
+        <div className="flex-1 ml-0.5 rounded-lg overflow-hidden bg-black">
+          {/* Playlist header - purple gradient */}
+          <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-t-lg">
+            <div className="px-8 flex items-end gap-8 relative">
+              {/* Playlist cover art */}
+              <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg rounded-md">
+                <Heart className="w-24 h-24 text-white fill-white" />
+              </div>
+              {/* Playlist info */}
+              <div className="flex flex-col justify-end h-full flex-1">
+                <div className="text-xs mb-2">Playlist</div>
+                <h1 className="text-6xl md:text-7xl font-extrabold mb-4 leading-tight tracking-tight truncate">
+                  {isGeneratingName ? (
+                    <div className="flex items-center gap-2">
+                      <span className="opacity-70">Naming playlist...</span>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : (
+                    playlistName || inputValue
+                  )}
+                </h1>
+                <div className="flex items-center gap-2 text-base mb-4">
+                  <div className="w-7 h-7 rounded-full overflow-hidden">
+                    <Image
+                      src="https://avatar.iran.liara.run/public/25"
+                      alt="Profile"
+                      width={28}
+                      height={28}
+                      className="object-cover"
+                    />
                   </div>
-                ) : (
-                  playlistName || inputValue
-                )}
-              </h1>
-              <div className="flex items-center gap-1 text-xs">
-                {/* Avatar image to the left of the name, sized 24x24 like in page.tsx */}
-                <div className="w-6 h-6 rounded-full overflow-hidden">
-                  <Image
-                    src="https://avatar.iran.liara.run/public/25"
-                    alt="Profile"
-                    width={24}
-                    height={24}
-                    className="object-cover"
-                  />
+                  <span className="font-bold">Devrishi Sikka</span>
+                  <span className="text-gray-300">• {playlist.length} songs</span>
                 </div>
-                <span className="font-bold">Devrishi Sikka</span>
-                <span className="text-gray-400">• {playlist.length} songs</span>
+                {/* Add to Library Button moved here */}
+                <div>
+                  <Button 
+                    className="bg-white hover:bg-gray-200 text-black rounded-md py-2 px-8 text-base font-bold transition-all"
+                    onClick={() => console.log("Added to library")}
+                  >
+                    Add to Library
+                  </Button>
+                </div>
               </div>
             </div>
-            
-            {/* Add to Library Button - Absolute positioning to rightmost edge */}
-            <div className="absolute right-8 bottom-0 mt-8">
-              <Button 
-                className="bg-white hover:bg-gray-200 text-black rounded-md py-1 px-6 text-xs font-bold transition-all"
-                onClick={() => console.log("Added to library")}
-              >
-                Add to Library
-              </Button>
+          </div>
+
+          {/* Playlist controls */}
+          <div className="flex items-center gap-6 mb-6 px-8 bg-black">
+            <div className="w-14 h-14 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
+              <Play className="w-7 h-7 text-black fill-black ml-1" />
+            </div>
+            <Download className="w-8 h-8 text-gray-400 hover:text-white cursor-pointer" />
+            <div className="ml-auto flex items-center gap-4">
+              <Search className="w-5 h-5 text-gray-400" />
+              <div className="text-base text-gray-400">List</div>
+              <ListMusic className="w-5 h-5 text-gray-400" />
             </div>
           </div>
-        </div>
 
-        {/* Playlist controls - reduced vertical spacing */}
-        <div className="flex items-center gap-6 mb-3 mt-2 px-4">
-          <div className="w-12 h-12 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
-            <Play className="w-6 h-6 text-black fill-black ml-1" />
-          </div>
-          <Download className="w-7 h-7 text-gray-400 hover:text-white cursor-pointer" />
-          <div className="ml-auto flex items-center gap-4">
-            <Search className="w-4 h-4 text-gray-400" />
-            <div className="text-xs text-gray-400">List</div>
-            <ListMusic className="w-4 h-4 text-gray-400" />
-          </div>
-        </div>
-
-        {/* Songs table - adjusted for more visible songs */}
-        <div className="w-full">
-          {/* Table header */}
-          <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-4 py-2 text-sm text-gray-400 font-semibold">
-            <div className="text-center">#</div>
-            <div>Title</div>
-            <div>Album</div>
-            <div>Date added</div>
-            <div className="flex justify-end pr-2">
-              <Clock className="w-5 h-5" />
+          {/* Songs table - solid black bg, no gradient */}
+          <div className="w-full bg-black rounded-b-lg">
+            {/* Table header */}
+            <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-8 py-2 text-base text-gray-400 font-semibold">
+              <div className="text-center">#</div>
+              <div>Title</div>
+              <div>Album</div>
+              <div>Date added</div>
+              <div className="flex justify-end pr-2">
+                <Clock className="w-5 h-5" />
+              </div>
             </div>
-          </div>
-          {/* Scrollable Songs List - with animations and album art */}
-          <div 
-            className="overflow-y-auto max-h-[calc(100vh-350px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
-            style={{ paddingBottom: "120px" }}
-          >
-            {playlist.map((song, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  duration: 0.3, 
-                  delay: index * 0.05,
-                  ease: "easeOut" 
-                }}
-                className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center"
-              >
-                <div className="text-gray-400 text-right pr-2">
-                  {index + 1}
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative overflow-hidden rounded-sm">
-                    {song.albumArt ? (
-                      <Image 
-                        src={song.albumArt} 
-                        alt={`${song.album} cover`} 
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          // Fallback if image fails to load
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                        <div className="text-xs text-white">{song.title.charAt(0)}</div>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-medium">{song.title}</div>
-                    <div className="text-gray-400 text-xs">
-                      {song.artist}
+            {/* Table rows */}
+            <div 
+              className="overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
+              style={{ paddingBottom: "120px" }}
+            >
+              {playlist.map((song, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-8 py-2 hover:bg-[#2a2a2a] rounded-md text-base items-center group"
+                >
+                  <div className="text-gray-400 relative flex justify-center">
+                    <span className="group-hover:opacity-0 absolute">{index + 1}</span>
+                    <div className="opacity-0 group-hover:opacity-100">
+                      <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
                     </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                      {song.albumArt ? (
+                        <Image
+                          src={song.albumArt}
+                          alt={`${song.album} cover`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                          <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">{song.title}</div>
+                      <div className="text-gray-400 text-xs">{song.artist}</div>
+                    </div>
+                  </div>
+                  <div className="text-gray-400">{song.album}</div>
+                  <div className="text-gray-400">{song.days || song.dateAdded || '2 days ago'}</div>
+                  <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
                 </div>
-                <div className="text-gray-400">{song.album}</div>
-                <div className="text-gray-400">{song.days || '2 days ago'}</div>
-                <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -235,65 +231,117 @@ const MoodSearch = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-[#121212] overflow-y-auto">
-      {/* Form section */}
-      <div className="flex-1 flex flex-col items-center justify-center w-full px-4 py-16">
+    <div className="min-h-screen w-full flex bg-gradient-to-b from-[#323232] to-[#121212]">
+      {/* Sidebar placeholder (match the sidebar width used elsewhere, e.g., w-60) */}
+      <div className="w-12 flex-shrink-0" />
+      {/* Main content with animation */}
+      <AnimatePresence>
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          key="ai-search"
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          exit={{ opacity: 0, y: 32 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="flex-1 flex items-center justify-center"
         >
-          <h1 className="text-4xl font-bold mb-6 text-center">
-            AI Mood-Based Playlist Generator
-          </h1>
-          <p className="text-gray-400 mb-8 text-center max-w-lg text-base">
-            Describe your mood, activity, or the vibe you're looking for, and
-            we'll create a custom playlist just for you.
-          </p>
-        </motion.div>
+          <div className="w-full max-w-5xl mx-auto flex flex-col items-center justify-center py-6">
+            {/* Heading - reduced size */}
+            <div className="flex flex-col items-center w-full mb-4">
+              <h1 className="text-xl md:text-2xl font-extrabold text-center mb-3 leading-snug">
+                Create Your Perfect Playlist<br className="hidden md:block" />with AI
+              </h1>
+              <p className="text-gray-300 text-center text-sm max-w-xl mb-6 leading-relaxed">
+                Tell us how you're feeling, what you're doing, or the vibe you want—
+                <br className="hidden md:block" />
+                our AI will instantly craft the perfect playlist just for you.
+              </p>
+            </div>
 
-        <motion.form
-          onSubmit={onSubmit}
-          className="w-full max-w-lg mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <div className="relative w-full mb-6">
-            <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="bg-[#2a2a2a] border-none rounded-full pl-10 py-4 text-base w-full"
-              placeholder="e.g., 'Hindi Pop'"
-            />
-          </div>
+            {/* Search bar and mascot - smaller */}
+            <form
+              onSubmit={onSubmit}
+              className="w-full max-w-2xl mx-auto flex flex-col items-center gap-2 mb-4"
+            >
+              <div className="w-full flex items-center gap-2 justify-center">
+                <div className="relative flex-1 max-w-2xl">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="bg-[#232323] border border-gray-700 hover:border-gray-600 focus:border-[#1ed760] rounded-full pl-9 pr-9 py-2 text-xs w-full placeholder:text-gray-400 focus:outline-none transition-colors"
+                    placeholder='e.g. "Evening chill for studying".'
+                  />
+                </div>
+                <div className="flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 1 }}
+                    animate={{ 
+                      scale: [1, 1.05, 1],
+                      rotate: [0, 3, -3, 0]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "loop"
+                    }}
+                    className="flex items-center justify-center"
+                  >
+                    <svg width="72" height="72" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                      {/* Character Body */}
+                      <circle cx="100" cy="100" r="50" fill="#7FFFA0" />
+                      {/* Character Face */}
+                      <ellipse cx="80" cy="95" rx="8" ry="10" fill="transparent" />
+                      <ellipse cx="120" cy="95" rx="8" ry="10" fill="transparent" />
+                      <path d="M 85 120 Q 100 135 115 120" stroke="transparent" strokeWidth="6" fill="none" strokeLinecap="round" />
+                      {/* Headphone Band */}
+                      <path d="M 50 80 C 50 30, 150 30, 150 80" stroke="#1DA93B" strokeWidth="8" fill="none" />
+                      {/* Headphone Ear Cups */}
+                      <ellipse cx="50" cy="90" rx="15" ry="20" fill="#1DA93B" />
+                      <ellipse cx="150" cy="90" rx="15" ry="20" fill="#1DA93B" />
+                    </svg>
+                  </motion.div>
+                </div>
+              </div>
+            </form>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {premadePrompts.map((prompt, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + index * 0.05 }}
-                onClick={() => handlePromptClick(prompt)}
-                className="bg-[#2a2a2a] px-4 py-2 rounded-full text-sm cursor-pointer hover:bg-[#333333] transition-colors"
+            {/* Prompt chips - smaller - wider container */}
+            <div className="w-full max-w-2xl mx-auto flex flex-wrap justify-center gap-2 mb-6">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 bg-[#232323] text-white px-4 py-1.5 rounded-full font-medium text-xs hover:bg-[#282828] transition"
+                style={{ minWidth: 0 }}
               >
-                {prompt}
-              </motion.div>
-            ))}
-          </div>
+                <span role="img" aria-label="fire">🔥</span> Trending Now
+              </button>
+              {premadePrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => handlePromptClick(prompt)}
+                  className="bg-[#232323] text-white px-4 py-1.5 rounded-full font-medium text-xs hover:bg-[#282828] transition"
+                  style={{ minWidth: 0 }}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
 
-          <Button
-            type="submit"
-            className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold rounded-full w-full py-4 text-lg"
-          >
-            Generate Playlist
-          </Button>
-        </motion.form>
-      </div>
+            {/* Generate button - wider */}
+            <div className="w-full max-w-2xl mx-auto flex justify-center">
+              <button
+                type="submit"
+                onClick={onSubmit}
+                className="w-full bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold rounded-full py-2.5 text-sm flex items-center justify-center gap-1.5 transition"
+              >
+                Generate My Playlist
+                <span role="img" aria-label="headphones">🎧</span>
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

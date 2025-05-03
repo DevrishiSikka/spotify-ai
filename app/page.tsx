@@ -241,7 +241,7 @@ export default function SpotifyClone() {
           ref={sidebarRef}
           className={`bg-[#121212] flex flex-col relative ${
             isCollapsed ? "w-16" : ""
-          } shadow-lg rounded-md mr-4 transition-all duration-300 ease-in-out`}
+          } shadow-lg rounded-md transition-all duration-300 ease-in-out`}
           style={{
             width: `${sidebarWidth}px`,
             height: "calc(100vh - 4rem - 80px)", // 4rem = 64px (navbar), 80px for player bar
@@ -468,11 +468,15 @@ export default function SpotifyClone() {
               {/* Scrollable Liked Songs Section */}
               <div className="flex-1 overflow-y-auto bg-black">
                 {showMoodSearch ? (
-                  <MoodSearch
-                    moodQuery={moodQuery}
-                    setMoodQuery={setMoodQuery}
-                    handleMoodSearch={handleMoodSearch}
-                  />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
+                    <div className="w-full  mx-auto flex items-center justify-center">
+                      <MoodSearch
+                        moodQuery={moodQuery}
+                        setMoodQuery={setMoodQuery}
+                        handleMoodSearch={handleMoodSearch}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <>
                     {/* Playlist header */}
