@@ -30,16 +30,16 @@ export default function SpotifyClone() {
   const [showMoodSearch, setShowMoodSearch] = useState(false)
   const [showMoodResults, setShowMoodResults] = useState(false)
   const [moodQuery, setMoodQuery] = useState("")
-  const [sidebarWidth, setSidebarWidth] = useState(320) // Default width increased from 256 to 320
+  const [sidebarWidth, setSidebarWidth] = useState(400) // Increased from 320 to 400
   const [isResizing, setIsResizing] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [playlistArtwork, setPlaylistArtwork] = useState({});
   const [songsWithArt, setSongsWithArt] = useState(songs);
   const minWidth = 80 // Minimum width before collapsing
-  const maxWidth = 400
-  const collapseThreshold = 140 // Width threshold to trigger auto-collapse
+  const maxWidth = 500 // Increased from 400 to 500
+  const collapseThreshold = 300 // Width threshold to trigger auto-collapse
   const collapsedWidth = 64 // Fixed width when collapsed
-  const expandedWidth = 320 // Default expanded width increased from 256 to 320
+  const expandedWidth = 400 // Increased from 320 to 400
   const sidebarRef = useRef(null)
 
   const toggleMoodSearch = () => {
@@ -59,35 +59,42 @@ export default function SpotifyClone() {
   }
 
   const stopResizing = () => {
-    setIsResizing(false)
+    setIsResizing(false);
 
-    // Snap to collapsed or expanded width when done resizing
-    if (isCollapsed) {
-      setSidebarWidth(collapsedWidth)
-    } else {
-      // Only snap to expanded if it's closer to expanded than to collapsed
-      if (sidebarWidth < collapseThreshold + 30) {
-        setSidebarWidth(expandedWidth)
-      }
+    // Only apply auto-collapse if width is very small
+    if (sidebarWidth < collapseThreshold / 2) {
+      setIsCollapsed(true);
+      setSidebarWidth(collapsedWidth);
+    } else if (sidebarWidth <= collapseThreshold && isCollapsed === false) {
+      // If it's already in collapsed state, keep it that way
+      // Otherwise, if it's expanded but below threshold, collapse it
+      setIsCollapsed(true);
+      setSidebarWidth(collapsedWidth);
+    } else if (sidebarWidth > collapseThreshold && isCollapsed === true) {
+      // If it's already in expanded state, keep it that way
+      // Otherwise, if it's collapsed but above threshold, expand it
+      setIsCollapsed(false);
+    }
+
+    // Snap to expanded width if close
+    if (!isCollapsed && Math.abs(sidebarWidth - expandedWidth) < 50) {
+      setSidebarWidth(expandedWidth);
     }
   }
 
   const resize = (e) => {
     if (isResizing) {
-      const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth))
-
-      // Auto collapse/expand based on width
-      if (newWidth <= collapseThreshold && !isCollapsed) {
-        setIsCollapsed(true)
-        setSidebarWidth(collapsedWidth)
-      } else if (newWidth > collapseThreshold && isCollapsed) {
-        setIsCollapsed(false)
-        setSidebarWidth(newWidth)
-      } else {
-        setSidebarWidth(newWidth)
-      }
+      const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
+      
+      // During active dragging, just update width without changing collapse state
+      setSidebarWidth(newWidth);
     }
   }
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+    setSidebarWidth(isCollapsed ? expandedWidth : collapsedWidth);
+  };
 
   useEffect(() => {
     document.addEventListener("mousemove", resize)
@@ -213,7 +220,6 @@ export default function SpotifyClone() {
         </div>
         {/* Right Side Controls */}
         <div className="flex items-center gap-8 ml-auto">
-          <span className="text-gray-200 text-base font-medium">Install App</span>
           <Bell className="w-6 h-6 text-gray-200" />
           <Users className="w-6 h-6 text-gray-200" />
           <div>
@@ -230,18 +236,114 @@ export default function SpotifyClone() {
 
       {/* Main content area: sidebar under navbar, then main content */}
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar - now sits below navbar */}
+        {/* Sidebar - now sits below navbar with reduced height and is resizable */}
         <div
           ref={sidebarRef}
-          className={`bg-[#121212] flex flex-col relative transition-width duration-150 ${
+          className={`bg-[#121212] flex flex-col relative ${
             isCollapsed ? "w-16" : ""
-          } shadow-lg rounded-md mr-4`} // Changed from rounded-2xl to rounded-md for subtle rounding
+          } shadow-lg rounded-md mr-4 transition-all duration-300 ease-in-out`}
           style={{
             width: `${sidebarWidth}px`,
-            height: "calc(100vh - 4rem)", // 4rem = 64px (navbar)
+            height: "calc(100vh - 4rem - 80px)", // 4rem = 64px (navbar), 80px for player bar
             minHeight: "0"
           }}
         >
+          {isCollapsed && (
+            <div className="flex flex-col items-center mt-4 space-y-5">
+              {/* Library icon */}
+              <Library className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
+              
+              {/* AI Playlist button */}
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="h-8 w-8 flex items-center justify-center bg-gradient-to-br from-[#1ed760] to-[#1db954] rounded-full shadow hover:from-[#1db954] hover:to-[#1ed760] transition-colors p-1.5"
+                      onClick={toggleMoodSearch}
+                      aria-label="Create playlist using prompt"
+                    >
+                      <Sparkles className="w-5 h-5 text-black" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="right" 
+                    align="center"
+                    sideOffset={5}
+                    className="bg-[#282828] border-none px-3 py-2"
+                  >
+                    <div className="text-xs font-medium">Create playlist using prompt</div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {/* Expand sidebar button */}
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button 
+                      className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"
+                      onClick={toggleSidebar}
+                      aria-label="Expand sidebar"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M5.3 12.7c-.4-.4-.4-1 0-1.4L8.6 8 5.3 4.7c-.4-.4-.4-1 0-1.4s1-.4 1.4 0l4 4c.4.4.4 1 0 1.4l-4 4c-.4.4-1 .4-1.4 0z" />
+                      </svg>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side="right"
+                    align="center" 
+                    className="bg-[#282828] border-none px-3 py-2"
+                  >
+                    <div className="text-xs font-medium">Expand sidebar</div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {/* Album covers with tooltips */}
+              <div className="flex flex-col items-center space-y-3 overflow-y-auto scrollbar-none max-h-[calc(100vh-280px)]">
+                {libraryItems.map((item, index) => (
+                  <TooltipProvider key={index} delayDuration={100}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-10 h-10 rounded-md overflow-hidden cursor-pointer">
+                          {playlistArtwork[index] ? (
+                            <Image
+                              src={playlistArtwork[index]}
+                              alt={`${item.title} cover`}
+                              width={40}
+                              height={40}
+                              className="object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder.svg";
+                              }}
+                            />
+                          ) : (
+                            <div className={`w-full h-full ${getRandomGradient(index)} flex items-center justify-center`}>
+                              {item.title.includes("Liked") && (
+                                <Heart className="w-5 h-5 text-white fill-white" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="right" 
+                        align="start"
+                        alignOffset={-14}
+                        sideOffset={5}
+                        className="bg-[#282828] border-none px-3 py-2"
+                      >
+                        <div className="font-semibold text-xs">{item.title}</div>
+                        <div className="text-gray-400 text-xs">{item.subtitle}</div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!isCollapsed && (
             <>
               {/* Library Header */}
@@ -251,23 +353,47 @@ export default function SpotifyClone() {
                     <Library className="w-6 h-6 text-gray-400" />
                     <span className="text-base font-bold">Your Library</span>
                   </div>
-                  {/* Sparkles AI Playlist Button with Tooltip - shifted right and padded */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          className="h-8 w-8 flex items-center justify-center bg-gradient-to-br from-[#1ed760] to-[#1db954] rounded-full shadow hover:from-[#1db954] hover:to-[#1ed760] transition-colors p-1.5 mr-1"
-                          onClick={toggleMoodSearch}
-                          aria-label="Create playlist using prompt"
-                        >
-                          <Sparkles className="w-5 h-5 text-black" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs font-medium">
-                        Create playlist using prompt
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  
+                  {/* Add the collapse button next to the AI button */}
+                  <div className="flex items-center gap-2">
+                    {/* AI Sparkles Button */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            className="h-8 w-8 flex items-center justify-center bg-gradient-to-br from-[#1ed760] to-[#1db954] rounded-full shadow hover:from-[#1db954] hover:to-[#1ed760] transition-colors p-1.5"
+                            onClick={toggleMoodSearch}
+                            aria-label="Create playlist using prompt"
+                          >
+                            <Sparkles className="w-5 h-5 text-black" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-[#282828] border-none px-3 py-2 text-xs font-medium">
+                          Create playlist using prompt
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    {/* Collapse sidebar button */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            className="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"
+                            onClick={toggleSidebar}
+                            aria-label="Collapse sidebar"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <path d="M10.7 12.7L6.7 8.7c-.4-.4-.4-1 0-1.4l4-4c.4-.4 1-.4 1.4 0s.4 1 0 1.4L8.4 8l3.7 3.7c.4.4.4 1 0 1.4-.4.4-1 .4-1.4 0z" />
+                            </svg>
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-[#282828] border-none px-3 py-2 text-xs font-medium">
+                          Collapse sidebar
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                 </div>
 
                 {/* Filter Buttons */}
@@ -327,13 +453,11 @@ export default function SpotifyClone() {
             </>
           )}
 
-          {isCollapsed && (
-            <div className="flex flex-col items-center mt-4 space-y-4">
-              <Home className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
-              <Search className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
-              <Library className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
-            </div>
-          )}
+          {/* Resize handle */}
+          <div 
+            className="absolute top-0 right-0 w-2 h-full cursor-ew-resize opacity-0 hover:opacity-100 bg-green-500 bg-opacity-20"
+            onMouseDown={startResizing}
+          />
         </div>
 
         {/* Main Content */}
@@ -355,7 +479,7 @@ export default function SpotifyClone() {
                     <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-md">
                       <div className="px-8 flex items-end gap-6">
                         {/* Playlist cover art */}
-                        <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg">
+                        <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg rounded-md">
                           <Heart className="w-24 h-24 text-white fill-white" />
                         </div>
                         <div>
@@ -392,7 +516,7 @@ export default function SpotifyClone() {
 
                     {/* Songs table */}
                     <div className="w-full">
-                      {/* Table header */}
+                      {/* Table header - Update alignment */}
                       <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-4 py-2 text-sm text-gray-400 font-semibold">
                         <div className="text-center">#</div>
                         <div>Title</div>
@@ -402,7 +526,7 @@ export default function SpotifyClone() {
                           <Clock className="w-5 h-5" />
                         </div>
                       </div>
-                      {/* Table rows */}
+                      {/* Table rows - Update alignment */}
                       <div 
                         className="overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
                         style={{ paddingBottom: "120px" }}
@@ -410,9 +534,14 @@ export default function SpotifyClone() {
                         {songsWithArt.map((song, index) => (
                           <div
                             key={index}
-                            className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center"
+                            className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center group"
                           >
-                            <div className="text-gray-400 text-right pr-2">{index + 1}</div>
+                            <div className="text-gray-400 relative flex justify-center">
+                              <span className="group-hover:opacity-0 absolute">{index + 1}</span>
+                              <div className="opacity-0 group-hover:opacity-100">
+                                <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
+                              </div>
+                            </div>
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 relative overflow-hidden rounded-sm">
                                 <Image
@@ -442,56 +571,56 @@ export default function SpotifyClone() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Player bar */}
-          <div className="h-20 bg-[#181818] border-t border-[#282828] flex items-center px-8">
-            <div className="flex items-center gap-3 w-80">
-              {/* Album cover for the currently playing song */}
-              <div className="w-14 h-14 relative rounded-md overflow-hidden">
-                <Image
-                  src={songsWithArt[0]?.image || "/placeholder.svg"}
-                  alt={songsWithArt[0]?.title || "Now playing"}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div>
-                <div className="font-medium text-sm">{songsWithArt[0]?.title || "Plain Sight"}</div>
-                <div className="text-xs text-gray-400">{songsWithArt[0]?.artist || "ansh"}</div>
-              </div>
-              <Heart className="w-4 h-4 text-[#1ed760] fill-[#1ed760] ml-4" />
-            </div>
-
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="flex items-center gap-5 mb-2">
-                <Shuffle className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-                <SkipBack className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                  <Play className="w-4 h-4 text-black fill-black ml-0.5" />
-                </div>
-                <SkipForward className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-                <Repeat className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-              </div>
-
-              <div className="flex items-center gap-2 w-full max-w-md">
-                <div className="text-xs text-gray-400">0:51</div>
-                <div className="flex-1 h-1 bg-[#4d4d4d] rounded-full">
-                  <div className="w-1/4 h-full bg-white rounded-full"></div>
-                </div>
-                <div className="text-xs text-gray-400">3:05</div>
-              </div>
-            </div>
-
-            <div className="w-80 flex items-center justify-end gap-3">
-              <Mic2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-              <ListMusic className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-              <Volume2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-              <div className="w-24 h-1 bg-[#4d4d4d] rounded-full">
-                <div className="w-3/4 h-full bg-white rounded-full"></div>
-              </div>
-              <Maximize2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-            </div>
+      {/* Player bar - positioned absolutely to span full width */}
+      <div className="h-20 bg-[#181818] border-t border-[#282828] flex items-center px-8 w-full fixed bottom-0 left-0 right-0">
+        <div className="flex items-center gap-3 w-80">
+          {/* Album cover for the currently playing song */}
+          <div className="w-14 h-14 relative rounded-md overflow-hidden">
+            <Image
+              src={songsWithArt[0]?.image || "/placeholder.svg"}
+              alt={songsWithArt[0]?.title || "Now playing"}
+              fill
+              className="object-cover"
+            />
           </div>
+          <div>
+            <div className="font-medium text-sm">{songsWithArt[0]?.title || "Plain Sight"}</div>
+            <div className="text-xs text-gray-400">{songsWithArt[0]?.artist || "ansh"}</div>
+          </div>
+          <Heart className="w-4 h-4 text-[#1ed760] fill-[#1ed760] ml-4" />
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-5 mb-2">
+            <Shuffle className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+            <SkipBack className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+              <Play className="w-4 h-4 text-black fill-black ml-0.5" />
+            </div>
+            <SkipForward className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+            <Repeat className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          </div>
+
+          <div className="flex items-center gap-2 w-full max-w-md">
+            <div className="text-xs text-gray-400">0:51</div>
+            <div className="flex-1 h-1 bg-[#4d4d4d] rounded-full">
+              <div className="w-1/4 h-full bg-white rounded-full"></div>
+            </div>
+            <div className="text-xs text-gray-400">3:05</div>
+          </div>
+        </div>
+
+        <div className="w-80 flex items-center justify-end gap-3">
+          <Mic2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          <ListMusic className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          <Volume2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          <div className="w-24 h-1 bg-[#4d4d4d] rounded-full">
+            <div className="w-3/4 h-full bg-white rounded-full"></div>
+          </div>
+          <Maximize2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
         </div>
       </div>
     </div>
