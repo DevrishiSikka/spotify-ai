@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGeminiPlaylist } from "@/hooks/useGeminiPlaylist";
 import AudioWaveform from "@/components/AudioWaveform";
+import PlaylistHeaderArtwork from "@/components/PlaylistHeaderArtwork";
 
 const MoodSearch = () => {
   const router = useRouter();
@@ -106,6 +107,9 @@ const MoodSearch = () => {
   }
 
   if (showResults && playlist.length > 0) {
+    // Create a shuffled version of the playlist
+    const shuffledPlaylist = [...playlist].sort(() => Math.random() - 0.5);
+    
     return (
       <div className="min-h-screen w-full bg-black text-white overflow-x-hidden flex">
         {/* Sidebar placeholder (match the sidebar width used elsewhere, e.g., w-60) */}
@@ -117,7 +121,7 @@ const MoodSearch = () => {
             <div className="px-8 flex items-end gap-8 relative">
               {/* Playlist cover art */}
               <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg rounded-md">
-                <Heart className="w-24 h-24 text-white fill-white" />
+                <PlaylistHeaderArtwork />
               </div>
               {/* Playlist info */}
               <div className="flex flex-col justify-end h-full flex-1">
@@ -133,17 +137,20 @@ const MoodSearch = () => {
                   )}
                 </h1>
                 <div className="flex items-center gap-2 text-base mb-4">
-                  <div className="w-7 h-7 rounded-full overflow-hidden">
-                    <Image
-                      src="https://avatar.iran.liara.run/public/25"
-                      alt="Profile"
-                      width={28}
-                      height={28}
-                      className="object-cover"
-                    />
+                  {/* Profile image with grey circle border */}
+                  <div className="w-7 h-7 rounded-full p-0.5 bg-gray-700 flex items-center justify-center">
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                      <Image
+                        src="https://avatar.iran.liara.run/public/25"
+                        alt="Profile"
+                        width={28}
+                        height={28}
+                        className="object-cover"
+                      />
+                    </div>
                   </div>
                   <span className="font-bold">Devrishi Sikka</span>
-                  <span className="text-gray-300">• {playlist.length} songs</span>
+                  <span className="text-gray-300">• {shuffledPlaylist.length * 2} songs</span>
                 </div>
                 {/* Add to Library Button moved here */}
                 <div>
@@ -186,15 +193,57 @@ const MoodSearch = () => {
             {/* Table rows */}
             <div 
               className="overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
-              style={{ paddingBottom: "120px" }}
+              style={{ paddingBottom: "40px" }}
             >
-              {playlist.map((song, index) => (
+              {/* First round of shuffled songs */}
+              {shuffledPlaylist.map((song, index) => (
                 <div
-                  key={index}
+                  key={`original-${index}`}
                   className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-8 py-2 hover:bg-[#2a2a2a] rounded-md text-base items-center group"
                 >
                   <div className="text-gray-400 relative flex justify-center">
                     <span className="group-hover:opacity-0 absolute">{index + 1}</span>
+                    <div className="opacity-0 group-hover:opacity-100">
+                      <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                      {song.albumArt ? (
+                        <Image
+                          src={song.albumArt}
+                          alt={`${song.album} cover`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                          <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">{song.title}</div>
+                      <div className="text-gray-400 text-xs">{song.artist}</div>
+                    </div>
+                  </div>
+                  <div className="text-gray-400">{song.album}</div>
+                  <div className="text-gray-400">{song.days || song.dateAdded || '2 days ago'}</div>
+                  <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
+                </div>
+              ))}
+              
+              {/* Second round of shuffled songs - with different shuffle */}
+              {[...shuffledPlaylist].sort(() => Math.random() - 0.5).map((song, index) => (
+                <div
+                  key={`duplicate-${index}`}
+                  className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-8 py-2 hover:bg-[#2a2a2a] rounded-md text-base items-center group"
+                >
+                  <div className="text-gray-400 relative flex justify-center">
+                    <span className="group-hover:opacity-0 absolute">{shuffledPlaylist.length + index + 1}</span>
                     <div className="opacity-0 group-hover:opacity-100">
                       <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
                     </div>

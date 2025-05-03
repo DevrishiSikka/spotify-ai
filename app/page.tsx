@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import Image from "next/image"
-import albumArt from "album-art"
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import albumArt from "album-art";
 import {
   Search,
   Home,
@@ -21,42 +21,50 @@ import {
   CircleArrowDown,
   Box,
   Users,
-  Sparkles
-} from "lucide-react"
-import MoodSearch from "@/components/mood-search"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+  Sparkles,
+} from "lucide-react";
+import MoodSearch from "@/components/mood-search";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import PlaylistHeaderArtwork from "@/components/PlaylistHeaderArtwork";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function SpotifyClone() {
-  const [showMoodSearch, setShowMoodSearch] = useState(false)
-  const [showMoodResults, setShowMoodResults] = useState(false)
-  const [moodQuery, setMoodQuery] = useState("")
-  const [sidebarWidth, setSidebarWidth] = useState(400) // Increased from 320 to 400
-  const [isResizing, setIsResizing] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showMoodSearch, setShowMoodSearch] = useState(false);
+  const [showMoodResults, setShowMoodResults] = useState(false);
+  const [moodQuery, setMoodQuery] = useState("");
+  const [sidebarWidth, setSidebarWidth] = useState(400); // Increased from 320 to 400
+  const [isResizing, setIsResizing] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [playlistArtwork, setPlaylistArtwork] = useState({});
   const [songsWithArt, setSongsWithArt] = useState(songs);
-  const minWidth = 80 // Minimum width before collapsing
-  const maxWidth = 500 // Increased from 400 to 500
-  const collapseThreshold = 300 // Width threshold to trigger auto-collapse
-  const collapsedWidth = 64 // Fixed width when collapsed
-  const expandedWidth = 400 // Increased from 320 to 400
-  const sidebarRef = useRef(null)
+  const [isLoading, setIsLoading] = useState(true);
+  const minWidth = 80; // Minimum width before collapsing
+  const maxWidth = 500; // Increased from 400 to 500
+  const collapseThreshold = 300; // Width threshold to trigger auto-collapse
+  const collapsedWidth = 64; // Fixed width when collapsed
+  const expandedWidth = 400; // Increased from 320 to 400
+  const sidebarRef = useRef(null);
 
   const toggleMoodSearch = () => {
-    setShowMoodSearch(!showMoodSearch)
-    setShowMoodResults(false)
-  }
+    setShowMoodSearch(!showMoodSearch);
+    setShowMoodResults(false);
+  };
 
   const handleMoodSearch = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (moodQuery.trim()) {
-      setShowMoodResults(true)
+      setShowMoodResults(true);
     }
-  }
+  };
 
   const startResizing = () => {
-    setIsResizing(true)
-  }
+    setIsResizing(true);
+  };
 
   const stopResizing = () => {
     setIsResizing(false);
@@ -80,16 +88,16 @@ export default function SpotifyClone() {
     if (!isCollapsed && Math.abs(sidebarWidth - expandedWidth) < 50) {
       setSidebarWidth(expandedWidth);
     }
-  }
+  };
 
   const resize = (e) => {
     if (isResizing) {
       const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
-      
+
       // During active dragging, just update width without changing collapse state
       setSidebarWidth(newWidth);
     }
-  }
+  };
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
@@ -97,20 +105,20 @@ export default function SpotifyClone() {
   };
 
   useEffect(() => {
-    document.addEventListener("mousemove", resize)
-    document.addEventListener("mouseup", stopResizing)
+    document.addEventListener("mousemove", resize);
+    document.addEventListener("mouseup", stopResizing);
 
     return () => {
-      document.removeEventListener("mousemove", resize)
-      document.removeEventListener("mouseup", stopResizing)
-    }
-  }, [isResizing, resize, stopResizing])
+      document.removeEventListener("mousemove", resize);
+      document.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizing, resize, stopResizing]);
 
   useEffect(() => {
     // Fetch album artwork for library items with Travis Scott fallbacks
     const fetchArtworkForLibrary = async () => {
       const artworkMap = {};
-      
+
       // Travis Scott albums for guaranteed aesthetic fallbacks
       const travisScottAlbums = [
         { artist: "Travis Scott", album: "Astroworld" },
@@ -120,40 +128,50 @@ export default function SpotifyClone() {
         { artist: "Travis Scott", album: "Days Before Rodeo" },
         { artist: "Travis Scott", album: "Owl Pharaoh" },
         { artist: "Travis Scott", album: "Huncho Jack, Jack Huncho" },
-        { artist: "Travis Scott", album: "JACKBOYS" }
+        { artist: "Travis Scott", album: "JACKBOYS" },
       ];
-      
+
       for (let i = 0; i < libraryItems.length; i++) {
         const item = libraryItems[i];
-        
+
         // Special case for "Liked Songs" - keep the heart graphic
         if (item.title.toLowerCase().includes("liked")) {
           artworkMap[i] = null;
           continue;
         }
-        
+
         // For all other playlists, use Travis Scott album art
         try {
           // Get Travis Scott album art for this playlist
           const tsIndex = i % travisScottAlbums.length;
           const tsAlbum = travisScottAlbums[tsIndex];
-          
-          console.log(`Fetching Travis Scott album art for ${item.title}: ${tsAlbum.album}`);
-          
-          const travisArt = await albumArt(tsAlbum.artist, { album: tsAlbum.album, size: 'large' });
+
+          console.log(
+            `Fetching Travis Scott album art for ${item.title}: ${tsAlbum.album}`
+          );
+
+          const travisArt = await albumArt(tsAlbum.artist, {
+            album: tsAlbum.album,
+            size: "large",
+          });
           artworkMap[i] = travisArt;
-          
-          console.log(`Set Travis Scott album cover for ${item.title}: ${travisArt}`);
+
+          console.log(
+            `Set Travis Scott album cover for ${item.title}: ${travisArt}`
+          );
         } catch (error) {
-          console.error(`Failed to fetch Travis Scott album art for ${item.title}:`, error);
+          console.error(
+            `Failed to fetch Travis Scott album art for ${item.title}:`,
+            error
+          );
           artworkMap[i] = null;
         }
       }
-      
+
       console.log("Final artwork map:", artworkMap);
       setPlaylistArtwork(artworkMap);
     };
-    
+
     fetchArtworkForLibrary();
   }, []);
 
@@ -162,7 +180,10 @@ export default function SpotifyClone() {
       const updatedSongs = await Promise.all(
         songs.map(async (song) => {
           try {
-            const artUrl = await albumArt(song.artist, { album: song.album, size: 'large' });
+            const artUrl = await albumArt(song.artist, {
+              album: song.album,
+              size: "large",
+            });
             return { ...song, image: artUrl || "/placeholder.svg" };
           } catch (error) {
             return { ...song, image: "/placeholder.svg" };
@@ -175,6 +196,20 @@ export default function SpotifyClone() {
     fetchAlbumArtForSongs();
   }, []);
 
+  useEffect(() => {
+    const loadData = async () => {
+      // Simulate loading time for artwork and other data
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate 2 seconds of loading
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   // Random gradient generator for playlist covers
   const getRandomGradient = (index) => {
     const gradients = [
@@ -185,9 +220,9 @@ export default function SpotifyClone() {
       "bg-gradient-to-br from-blue-500 to-teal-400",
       "bg-gradient-to-br from-red-500 to-purple-500",
       "bg-gradient-to-br from-teal-400 to-blue-500",
-      "bg-gradient-to-br from-orange-500 to-pink-500"
+      "bg-gradient-to-br from-orange-500 to-pink-500",
     ];
-    
+
     return gradients[index % gradients.length];
   };
 
@@ -245,14 +280,14 @@ export default function SpotifyClone() {
           style={{
             width: `${sidebarWidth}px`,
             height: "calc(100vh - 4rem - 80px)", // 4rem = 64px (navbar), 80px for player bar
-            minHeight: "0"
+            minHeight: "0",
           }}
         >
           {isCollapsed && (
             <div className="flex flex-col items-center mt-4 space-y-5">
               {/* Library icon */}
               <Library className="w-6 h-6 text-gray-400 hover:text-white cursor-pointer" />
-              
+
               {/* AI Playlist button */}
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
@@ -265,41 +300,48 @@ export default function SpotifyClone() {
                       <Sparkles className="w-5 h-5 text-black" />
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent 
-                    side="right" 
+                  <TooltipContent
+                    side="right"
                     align="center"
                     sideOffset={5}
                     className="bg-[#282828] border-none px-3 py-2"
                   >
-                    <div className="text-xs font-medium">Create playlist using prompt</div>
+                    <div className="text-xs font-medium">
+                      Create playlist using prompt
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               {/* Expand sidebar button */}
               <TooltipProvider delayDuration={100}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button 
+                    <button
                       className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"
                       onClick={toggleSidebar}
                       aria-label="Expand sidebar"
                     >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                      >
                         <path d="M5.3 12.7c-.4-.4-.4-1 0-1.4L8.6 8 5.3 4.7c-.4-.4-.4-1 0-1.4s1-.4 1.4 0l4 4c.4.4.4 1 0 1.4l-4 4c-.4.4-1 .4-1.4 0z" />
                       </svg>
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent 
+                  <TooltipContent
                     side="right"
-                    align="center" 
+                    align="center"
                     className="bg-[#282828] border-none px-3 py-2"
                   >
                     <div className="text-xs font-medium">Expand sidebar</div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               {/* Album covers with tooltips */}
               <div className="flex flex-col items-center space-y-3 overflow-y-auto scrollbar-none max-h-[calc(100vh-280px)]">
                 {libraryItems.map((item, index) => (
@@ -319,7 +361,11 @@ export default function SpotifyClone() {
                               }}
                             />
                           ) : (
-                            <div className={`w-full h-full ${getRandomGradient(index)} flex items-center justify-center`}>
+                            <div
+                              className={`w-full h-full ${getRandomGradient(
+                                index
+                              )} flex items-center justify-center`}
+                            >
                               {item.title.includes("Liked") && (
                                 <Heart className="w-5 h-5 text-white fill-white" />
                               )}
@@ -327,15 +373,19 @@ export default function SpotifyClone() {
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent 
-                        side="right" 
+                      <TooltipContent
+                        side="right"
                         align="start"
                         alignOffset={-14}
                         sideOffset={5}
                         className="bg-[#282828] border-none px-3 py-2"
                       >
-                        <div className="font-semibold text-xs">{item.title}</div>
-                        <div className="text-gray-400 text-xs">{item.subtitle}</div>
+                        <div className="font-semibold text-xs">
+                          {item.title}
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          {item.subtitle}
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -353,7 +403,7 @@ export default function SpotifyClone() {
                     <Library className="w-6 h-6 text-gray-400" />
                     <span className="text-base font-bold">Your Library</span>
                   </div>
-                  
+
                   {/* Add the collapse button next to the AI button */}
                   <div className="flex items-center gap-2">
                     {/* AI Sparkles Button */}
@@ -368,12 +418,15 @@ export default function SpotifyClone() {
                             <Sparkles className="w-5 h-5 text-black" />
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-[#282828] border-none px-3 py-2 text-xs font-medium">
+                        <TooltipContent
+                          side="top"
+                          className="bg-[#282828] border-none px-3 py-2 text-xs font-medium"
+                        >
                           Create playlist using prompt
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
+
                     {/* Collapse sidebar button */}
                     <TooltipProvider>
                       <Tooltip>
@@ -383,12 +436,20 @@ export default function SpotifyClone() {
                             onClick={toggleSidebar}
                             aria-label="Collapse sidebar"
                           >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 16 16"
+                              fill="currentColor"
+                            >
                               <path d="M10.7 12.7L6.7 8.7c-.4-.4-.4-1 0-1.4l4-4c.4-.4 1-.4 1.4 0s.4 1 0 1.4L8.4 8l3.7 3.7c.4.4.4 1 0 1.4-.4.4-1 .4-1.4 0z" />
                             </svg>
                           </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-[#282828] border-none px-3 py-2 text-xs font-medium">
+                        <TooltipContent
+                          side="top"
+                          className="bg-[#282828] border-none px-3 py-2 text-xs font-medium"
+                        >
                           Collapse sidebar
                         </TooltipContent>
                       </Tooltip>
@@ -440,12 +501,18 @@ export default function SpotifyClone() {
                         />
                       ) : (
                         // Gradient fallback
-                        <div className={`w-full h-full ${getRandomGradient(index)}`} />
+                        <div
+                          className={`w-full h-full ${getRandomGradient(index)}`}
+                        />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm truncate">{item.title}</div>
-                      <div className="text-xs text-gray-400 truncate">{item.subtitle}</div>
+                      <div className="font-medium text-sm truncate">
+                        {item.title}
+                      </div>
+                      <div className="text-xs text-gray-400 truncate">
+                        {item.subtitle}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -454,7 +521,7 @@ export default function SpotifyClone() {
           )}
 
           {/* Resize handle */}
-          <div 
+          <div
             className="absolute top-0 right-0 w-2 h-full cursor-ew-resize opacity-0 hover:opacity-100 bg-green-500 bg-opacity-20"
             onMouseDown={startResizing}
           />
@@ -463,7 +530,7 @@ export default function SpotifyClone() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col ml-2">
           {/* Existing Content */}
-          <div className="flex-1 overflow-hidden rounded-md" >
+          <div className="flex-1 overflow-hidden rounded-md">
             <div className="flex flex-1 overflow-hidden">
               {/* Scrollable Liked Songs Section */}
               <div className="flex-1 overflow-y-auto bg-black">
@@ -482,13 +549,13 @@ export default function SpotifyClone() {
                     {/* Playlist header */}
                     <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-md">
                       <div className="px-8 flex items-end gap-6">
-                        {/* Playlist cover art */}
-                        <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg rounded-md">
-                          <Heart className="w-24 h-24 text-white fill-white" />
-                        </div>
+                        {/* Playlist Header Artwork */}
+                        <PlaylistHeaderArtwork />
                         <div>
                           <div className="text-xs mb-1">Playlist</div>
-                          <h1 className="text-8xl font-extrabold mb-3 leading-tight tracking-tight">Liked Songs</h1>
+                          <h1 className="text-8xl font-extrabold mb-3 leading-tight tracking-tight">
+                            Liked Songs
+                          </h1>
                           <div className="flex items-center gap-1 text-xs">
                             <div className="w-6 h-6 rounded-full overflow-hidden">
                               <Image
@@ -505,8 +572,8 @@ export default function SpotifyClone() {
                       </div>
                     </div>
 
-                      {/* Playlist controls */}
-                      <div className="flex items-center gap-6 mb-6 px-4">
+                    {/* Playlist controls */}
+                    <div className="flex items-center gap-6 mb-6 px-4">
                       <div className="w-14 h-14 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
                         <Play className="w-7 h-7 text-black fill-black ml-1" />
                       </div>
@@ -516,7 +583,7 @@ export default function SpotifyClone() {
                         <div className="text-sm text-gray-400">List</div>
                         <ListMusic className="w-5 h-5 text-gray-400" />
                       </div>
-                      </div>
+                    </div>
 
                     {/* Songs table */}
                     <div className="w-full">
@@ -531,8 +598,8 @@ export default function SpotifyClone() {
                         </div>
                       </div>
                       {/* Table rows - Update alignment */}
-                      <div 
-                        className="overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
+                      <div
+                        className="overflow-y-auto max-h-[calc(100vh-360px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
                         style={{ paddingBottom: "120px" }}
                       >
                         {songsWithArt.map((song, index) => (
@@ -541,7 +608,9 @@ export default function SpotifyClone() {
                             className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center group"
                           >
                             <div className="text-gray-400 relative flex justify-center">
-                              <span className="group-hover:opacity-0 absolute">{index + 1}</span>
+                              <span className="group-hover:opacity-0 absolute">
+                                {index + 1}
+                              </span>
                               <div className="opacity-0 group-hover:opacity-100">
                                 <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
                               </div>
@@ -560,12 +629,18 @@ export default function SpotifyClone() {
                               </div>
                               <div>
                                 <div className="font-medium">{song.title}</div>
-                                <div className="text-gray-400 text-xs">{song.artist}</div>
+                                <div className="text-gray-400 text-xs">
+                                  {song.artist}
+                                </div>
                               </div>
                             </div>
                             <div className="text-gray-400">{song.album}</div>
-                            <div className="text-gray-400">{song.dateAdded}</div>
-                            <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
+                            <div className="text-gray-400">
+                              {song.dateAdded}
+                            </div>
+                            <div className="text-gray-400 flex justify-end pr-2">
+                              {song.duration}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -591,8 +666,12 @@ export default function SpotifyClone() {
             />
           </div>
           <div>
-            <div className="font-medium text-sm">{songsWithArt[0]?.title || "Plain Sight"}</div>
-            <div className="text-xs text-gray-400">{songsWithArt[0]?.artist || "ansh"}</div>
+            <div className="font-medium text-sm">
+              {songsWithArt[0]?.title || "Plain Sight"}
+            </div>
+            <div className="text-xs text-gray-400">
+              {songsWithArt[0]?.artist || "ansh"}
+            </div>
           </div>
           <Heart className="w-4 h-4 text-[#1ed760] fill-[#1ed760] ml-4" />
         </div>
@@ -628,7 +707,7 @@ export default function SpotifyClone() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Mock data
@@ -661,7 +740,7 @@ const libraryItems = [
   },
   { title: "JK's Punjabi Playlist", subtitle: "Playlist • JK", image: "/placeholder.svg" },
   { title: "Bali", subtitle: "Artist", image: "/placeholder.svg" },
-]
+];
 
 const songs = [
   {
@@ -784,7 +863,7 @@ const songs = [
     duration: "8:49",
     image: "/placeholder.svg",
   },
-]
+];
 
 function Bell(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -803,7 +882,7 @@ function Bell(props: React.SVGProps<SVGSVGElement>) {
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
-  )
+  );
 }
 
 function Check(props: React.SVGProps<SVGSVGElement>) {
@@ -822,5 +901,5 @@ function Check(props: React.SVGProps<SVGSVGElement>) {
     >
       <polyline points="20 6 9 17 4 12" />
     </svg>
-  )
+  );
 }
