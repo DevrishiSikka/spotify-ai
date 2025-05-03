@@ -6,7 +6,7 @@ import { Analytics } from "@vercel/analytics/react"
 export const metadata = {
   title: "Spotify Clone - Mood-Based Playlist Generator",
   description: "A Spotify clone with mood-based playlist generation",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -19,6 +19,7 @@ export default function RootLayout({
       <body>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
