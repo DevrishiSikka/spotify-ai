@@ -1,12 +1,53 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import albumArt from "album-art";
 
 const useGeminiPlaylist = () => {
   const [userMood, setUserMood] = useState("");
-  const [inputValue, setInputValue] = useState(""); // Temporary input value
+  const [inputValue, setInputValue] = useState("");
   const [playlist, setPlaylist] = useState([]);
   const [error, setError] = useState(null);
   const [showResults, setShowResults] = useState(false);
+  const [isLoadingArtwork, setIsLoadingArtwork] = useState(false);
+  const [playlistName, setPlaylistName] = useState("");
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
+
+  // Function to generate playlist name
+  const fetchPlaylistName = async (mood) => {
+    setIsGeneratingName(true);
+    try {
+      console.log("Generating playlist name for mood:", mood);
+      
+      const res = await fetch("https://spotify-gemini-backend.onrender.com/api/generate-name", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mood }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to generate playlist name: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Received playlist name from API:", data);
+      
+      // Handle different response formats
+      if (typeof data === 'string') {
+        setPlaylistName(data);
+      } else if (data && data.name) {
+        setPlaylistName(data.name);
+      } else {
+        setPlaylistName(`${mood} Mix`);
+      }
+    } catch (err) {
+      console.error("Error generating playlist name:", err);
+      setPlaylistName(`${mood} Mix`);
+    } finally {
+      setIsGeneratingName(false);
+    }
+  };
 
   const fetchPlaylist = async () => {
     const url = "https://spotify-gemini-backend.onrender.com/api/generate";
@@ -14,12 +55,15 @@ const useGeminiPlaylist = () => {
     try {
       console.log("Sending request to API with prompt:", userMood);
 
+      // Start generating playlist name in parallel
+      fetchPlaylistName(userMood);
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ mood: userMood }), // Send only the userMood as the prompt
+        body: JSON.stringify({ mood: userMood }), // Changed from prompt to mood
       });
 
       console.log("Raw response from API:", res);
@@ -31,24 +75,73 @@ const useGeminiPlaylist = () => {
       const data = await res.json();
       console.log("Parsed response data from API:", data);
 
-      setPlaylist(data); // Assuming the API directly returns the playlist JSON
+      // Ensure data is an array before proceeding
+      if (!Array.isArray(data)) {
+        console.error("API did not return an array:", data);
+        if (data.songs && Array.isArray(data.songs)) {
+          // Try to extract songs if that's where they are
+          console.log("Found songs array in response");
+          
+          // Fetch album art for each song
+          setIsLoadingArtwork(true);
+          
+          const songsWithArt = await Promise.all(
+            data.songs.map(async (song) => {
+              try {
+                const artUrl = await albumArt(song.artist, { album: song.album, size: 'large' });
+                return { ...song, albumArt: artUrl };
+              } catch (error) {
+                console.error(`Failed to fetch album art for ${song.title} by ${song.artist}:`, error);
+                return { ...song, albumArt: null };
+              }
+            })
+          );
+          
+          setIsLoadingArtwork(false);
+          setPlaylist(songsWithArt);
+          setError(null);
+          setShowResults(true);
+          return;
+        } else {
+          throw new Error("API response is not in the expected format");
+        }
+      }
+
+      // Fetch album art for each song
+      setIsLoadingArtwork(true);
+      
+      const songsWithArt = await Promise.all(
+        data.map(async (song) => {
+          try {
+            const artUrl = await albumArt(song.artist, { album: song.album, size: 'large' });
+            return { ...song, albumArt: artUrl };
+          } catch (error) {
+            console.error(`Failed to fetch album art for ${song.title} by ${song.artist}:`, error);
+            return { ...song, albumArt: null };
+          }
+        })
+      );
+      
+      setIsLoadingArtwork(false);
+      setPlaylist(songsWithArt);
       setError(null);
       setShowResults(true);
     } catch (err) {
       console.error("Error fetching playlist:", err);
       setError(err);
+      setIsLoadingArtwork(false);
     }
   };
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && inputValue.trim() !== "") {
-      setUserMood(inputValue); // Update userMood state
+      setUserMood(inputValue);
     }
   };
 
   useEffect(() => {
     if (userMood) {
-      fetchPlaylist(); // Trigger API call only when userMood is updated
+      fetchPlaylist();
     }
   }, [userMood]);
 
@@ -59,11 +152,14 @@ const useGeminiPlaylist = () => {
     setInputValue,
     showResults,
     handleKeyPress,
-    setUserMood, // Include setUserMood in the return statement
+    setUserMood,
+    isLoadingArtwork,
+    playlistName,
+    isGeneratingName,
   };
 };
 
-const GeminiPlaylistComponent = ({ playlist, showResults, userMood }) => {
+const GeminiPlaylistComponent = ({ playlist, showResults, userMood, playlistName }) => {
   if (showResults && playlist.length > 0) {
     return (
       <div className="min-h-screen w-full flex flex-col bg-[#121212] text-white">
@@ -91,7 +187,7 @@ const GeminiPlaylistComponent = ({ playlist, showResults, userMood }) => {
             </div>
             <div>
               <p className="text-xs uppercase font-normal text-gray-300">Playlist</p>
-              <h1 className="text-[5rem] font-bold text-white mb-4 mt-1">{userMood || "Liked Songs"}</h1>
+              <h1 className="text-[5rem] font-bold text-white mb-4 mt-1">{playlistName || userMood || "Liked Songs"}</h1>
               <div className="flex items-center text-sm text-gray-300">
                 <span>Devrishi Sikka</span>
                 <span className="mx-1">•</span>

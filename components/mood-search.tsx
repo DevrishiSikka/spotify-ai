@@ -18,7 +18,10 @@ const MoodSearch = () => {
     setInputValue,
     showResults,
     handleKeyPress,
-    setUserMood, 
+    setUserMood,
+    isLoadingArtwork,
+    playlistName,        // Get this from the hook instead of local state
+    isGeneratingName     // Get this from the hook instead of local state
   } = useGeminiPlaylist();
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,11 +51,11 @@ const MoodSearch = () => {
   };
 
   useEffect(() => {
-    if (playlist.length > 0) {
+    if (playlist.length > 0 && !isLoadingArtwork) {
       console.log("Playlist data from API:", playlist);
       setIsGenerating(false); // Stop the loading state when the playlist is ready
     }
-  }, [playlist]);
+  }, [playlist, isLoadingArtwork]);
 
   useEffect(() => {
     if (error) {
@@ -66,14 +69,17 @@ const MoodSearch = () => {
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-black text-white">
         <h1 className="text-2xl font-bold mb-4">Error</h1>
         <p className="text-red-500">{error.message}</p>
-        <Button onClick={() => router.reload()} className="mt-4">
+        <Button 
+          onClick={() => window.location.reload()} 
+          className="mt-4"
+        >
           Try Again
         </Button>
       </div>
     );
   }
 
-  if (isGenerating) {
+  if (isGenerating || isLoadingArtwork) {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-b from-purple-900 to-black text-white">
         <motion.div
@@ -82,9 +88,13 @@ const MoodSearch = () => {
           className="flex flex-col items-center"
         >
           <Loader2 className="w-16 h-16 animate-spin text-green-500 mb-6" />
-          <h2 className="text-2xl font-bold mb-3">Creating Your Playlist</h2>
+          <h2 className="text-2xl font-bold mb-3">
+            {isLoadingArtwork ? "Fetching Album Artwork" : "Creating Your Playlist"}
+          </h2>
           <p className="text-gray-300 mb-6 text-center max-w-md">
-            Our AI is curating songs based on "{inputValue}"
+            {isLoadingArtwork 
+              ? "Adding album covers to enhance your experience..." 
+              : `Our AI is curating songs based on "${inputValue}"`}
           </p>
         </motion.div>
       </div>
@@ -96,22 +106,48 @@ const MoodSearch = () => {
       <div className="min-h-screen w-full bg-black text-white">
         {/* Playlist header - with reduced height */}
         <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3">
-          <div className="px-8 flex items-end gap-6">
-            {/* Playlist cover art - reduced size */}
-            <div className="w-48 h-48 bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg">
+          <div className="px-8 flex items-end gap-6 relative">
+            {/* Playlist cover art - fixed square dimensions */}
+            <div className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg">
               <Heart className="w-24 h-24 text-white fill-white" />
             </div>
-            <div>
+            <div className="flex flex-col flex-grow">
               <div className="text-xs mb-1">Playlist</div>
-              {/* Smaller title */}
-              <h1 className="text-6xl font-bold mb-3">{inputValue}</h1>
+              {/* Display AI-generated playlist name */}
+              <h1 className="text-7xl font-extrabold mb-3">
+                {isGeneratingName ? (
+                  <div className="flex items-center gap-2">
+                    <span className="opacity-70">Naming playlist...</span>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  playlistName || inputValue
+                )}
+              </h1>
               <div className="flex items-center gap-1 text-xs">
-                <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-700 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold">DS</span>
+                {/* Avatar image to the left of the name, sized 24x24 like in page.tsx */}
+                <div className="w-6 h-6 rounded-full overflow-hidden">
+                  <Image
+                    src="https://avatar.iran.liara.run/public/25"
+                    alt="Profile"
+                    width={24}
+                    height={24}
+                    className="object-cover"
+                  />
                 </div>
                 <span className="font-bold">Devrishi Sikka</span>
                 <span className="text-gray-400">• {playlist.length} songs</span>
               </div>
+            </div>
+            
+            {/* Add to Library Button - Absolute positioning to rightmost edge */}
+            <div className="absolute right-8 bottom-0 mt-8">
+              <Button 
+                className="bg-white hover:bg-gray-200 text-black rounded-md py-1 px-6 text-xs font-bold transition-all"
+                onClick={() => console.log("Added to library")}
+              >
+                Add to Library
+              </Button>
             </div>
           </div>
         </div>
@@ -131,32 +167,54 @@ const MoodSearch = () => {
 
         {/* Songs table - adjusted for more visible songs */}
         <div className="w-full">
-          <div className="grid grid-cols-[40px_1fr_1fr_auto_auto] gap-4 border-b border-[#2a2a2a] px-4 py-1 text-xs text-gray-400">
+          {/* Table header */}
+          <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-4 py-2 text-sm text-gray-400 font-semibold">
             <div className="text-center">#</div>
             <div>Title</div>
             <div>Album</div>
             <div>Date added</div>
-            <div>
-              <Clock className="w-4 h-4" />
+            <div className="flex justify-end pr-2">
+              <Clock className="w-5 h-5" />
             </div>
           </div>
-
-          {/* Scrollable Songs List - increased max height */}
+          {/* Scrollable Songs List - with animations and album art */}
           <div 
             className="overflow-y-auto max-h-[calc(100vh-350px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900" 
             style={{ paddingBottom: "120px" }}
           >
             {playlist.map((song, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="grid grid-cols-[40px_1fr_1fr_auto_auto] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  ease: "easeOut" 
+                }}
+                className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center"
               >
                 <div className="text-gray-400 text-right pr-2">
                   {index + 1}
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 relative bg-gray-700 flex items-center justify-center">
-                    <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                  <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                    {song.albumArt ? (
+                      <Image 
+                        src={song.albumArt} 
+                        alt={`${song.album} cover`} 
+                        fill
+                        className="object-cover"
+                        onError={(e) => {
+                          // Fallback if image fails to load
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                        <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="font-medium">{song.title}</div>
@@ -167,8 +225,8 @@ const MoodSearch = () => {
                 </div>
                 <div className="text-gray-400">{song.album}</div>
                 <div className="text-gray-400">{song.days || '2 days ago'}</div>
-                <div className="text-gray-400">{song.duration}</div>
-              </div>
+                <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
+              </motion.div>
             ))}
           </div>
         </div>
