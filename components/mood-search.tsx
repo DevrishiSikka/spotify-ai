@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Search, Heart, Clock, Play, Download, ListMusic, Loader2 } from "lucide-react";
+import { Search, Heart, Clock, Play, Download, ListMusic, Loader2, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
@@ -107,16 +107,13 @@ const MoodSearch = () => {
   }
 
   if (showResults && playlist.length > 0) {
-    // Create a shuffled version of the playlist
-    const shuffledPlaylist = [...playlist].sort(() => Math.random() - 0.5);
-    
     return (
       <div className="min-h-screen w-full bg-black text-white overflow-x-hidden flex">
-        {/* Sidebar placeholder (match the sidebar width used elsewhere, e.g., w-60) */}
-        <div className="w-2 flex-shrink-0" /> {/* Even smaller sidebar gap */}
-        {/* Main playlist section with left margin for gap */}
+        {/* Sidebar placeholder */}
+        <div className="w-2 flex-shrink-0" />
+        {/* Main playlist section */}
         <div className="flex-1 ml-0.5 rounded-lg overflow-hidden bg-black">
-          {/* Playlist header - purple gradient */}
+          {/* Playlist header */}
           <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-t-lg">
             <div className="px-8 flex items-end gap-8 relative">
               {/* Playlist cover art */}
@@ -137,7 +134,6 @@ const MoodSearch = () => {
                   )}
                 </h1>
                 <div className="flex items-center gap-2 text-base mb-4">
-                  {/* Profile image with grey circle border */}
                   <div className="w-7 h-7 rounded-full p-0.5 bg-gray-700 flex items-center justify-center">
                     <div className="w-full h-full rounded-full overflow-hidden">
                       <Image
@@ -150,11 +146,10 @@ const MoodSearch = () => {
                     </div>
                   </div>
                   <span className="font-bold">Devrishi Sikka</span>
-                  <span className="text-gray-300">• {shuffledPlaylist.length * 2} songs</span>
+                  <span className="text-gray-300">• {playlist.length} songs</span>
                 </div>
-                {/* Add to Library Button moved here */}
                 <div>
-                  <Button 
+                  <Button
                     className="bg-white hover:bg-gray-200 text-black rounded-md py-2 px-8 text-base font-bold transition-all"
                     onClick={() => console.log("Added to library")}
                   >
@@ -178,7 +173,7 @@ const MoodSearch = () => {
             </div>
           </div>
 
-          {/* Songs table - solid black bg, no gradient */}
+          {/* Songs table */}
           <div className="w-full bg-black rounded-b-lg">
             {/* Table header */}
             <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-8 py-2 text-base text-gray-400 font-semibold">
@@ -191,89 +186,46 @@ const MoodSearch = () => {
               </div>
             </div>
             {/* Table rows */}
-            <div 
+            <div
               className="overflow-y-auto max-h-[calc(100vh-450px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
               style={{ paddingBottom: "40px" }}
             >
-              {/* First round of shuffled songs */}
-              {shuffledPlaylist.map((song, index) => (
+              {playlist.map((song, index) => (
                 <div
-                  key={`original-${index}`}
+                  key={index}
                   className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-8 py-2 hover:bg-[#2a2a2a] rounded-md text-base items-center group"
                 >
                   <div className="text-gray-400 relative flex justify-center">
-                    <span className="group-hover:opacity-0 absolute">{index + 1}</span>
-                    <div className="opacity-0 group-hover:opacity-100">
-                      <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
-                    </div>
+                    <span className="group-hover:hidden">{index + 1}</span>
+                    <Play className="w-4 h-4 text-white hidden group-hover:block" />
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                    <div className="w-10 h-10 min-w-[40px] rounded-md overflow-hidden bg-gray-800">
                       {song.albumArt ? (
                         <Image
                           src={song.albumArt}
-                          alt={`${song.album} cover`}
-                          fill
+                          alt={song.title}
+                          width={40}
+                          height={40}
                           className="object-cover"
                           onError={(e) => {
                             e.currentTarget.src = "/placeholder.svg";
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                          <div className="text-xs text-white">{song.title.charAt(0)}</div>
+                        <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                          <Music className="w-5 h-5 text-gray-600" />
                         </div>
                       )}
                     </div>
                     <div>
-                      <div className="font-medium">{song.title}</div>
-                      <div className="text-gray-400 text-xs">{song.artist}</div>
+                      <div className="text-white font-medium">{song.title}</div>
+                      <div className="text-gray-400 text-sm">{song.artist}</div>
                     </div>
                   </div>
                   <div className="text-gray-400">{song.album}</div>
-                  <div className="text-gray-400">{song.days || song.dateAdded || '2 days ago'}</div>
-                  <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
-                </div>
-              ))}
-              
-              {/* Second round of shuffled songs - with different shuffle */}
-              {[...shuffledPlaylist].sort(() => Math.random() - 0.5).map((song, index) => (
-                <div
-                  key={`duplicate-${index}`}
-                  className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-8 py-2 hover:bg-[#2a2a2a] rounded-md text-base items-center group"
-                >
-                  <div className="text-gray-400 relative flex justify-center">
-                    <span className="group-hover:opacity-0 absolute">{shuffledPlaylist.length + index + 1}</span>
-                    <div className="opacity-0 group-hover:opacity-100">
-                      <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 relative overflow-hidden rounded-sm">
-                      {song.albumArt ? (
-                        <Image
-                          src={song.albumArt}
-                          alt={`${song.album} cover`}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                          <div className="text-xs text-white">{song.title.charAt(0)}</div>
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium">{song.title}</div>
-                      <div className="text-gray-400 text-xs">{song.artist}</div>
-                    </div>
-                  </div>
-                  <div className="text-gray-400">{song.album}</div>
-                  <div className="text-gray-400">{song.days || song.dateAdded || '2 days ago'}</div>
-                  <div className="text-gray-400 flex justify-end pr-2">{song.duration}</div>
+                  <div className="text-gray-400">{song.dateAdded || "2 days ago"}</div>
+                  <div className="text-gray-400 flex justify-end pr-2">{song.duration || "3:30"}</div>
                 </div>
               ))}
             </div>

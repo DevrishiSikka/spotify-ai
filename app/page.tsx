@@ -69,24 +69,19 @@ export default function SpotifyClone() {
   const stopResizing = () => {
     setIsResizing(false);
 
-    // Only apply auto-collapse if width is very small
-    if (sidebarWidth < collapseThreshold / 2) {
+    // Simplified collapse/expand logic
+    if (sidebarWidth < collapseThreshold) {
+      // If below threshold, always collapse completely
       setIsCollapsed(true);
       setSidebarWidth(collapsedWidth);
-    } else if (sidebarWidth <= collapseThreshold && isCollapsed === false) {
-      // If it's already in collapsed state, keep it that way
-      // Otherwise, if it's expanded but below threshold, collapse it
-      setIsCollapsed(true);
-      setSidebarWidth(collapsedWidth);
-    } else if (sidebarWidth > collapseThreshold && isCollapsed === true) {
-      // If it's already in expanded state, keep it that way
-      // Otherwise, if it's collapsed but above threshold, expand it
+    } else {
+      // If above threshold, always expand
       setIsCollapsed(false);
-    }
 
-    // Snap to expanded width if close
-    if (!isCollapsed && Math.abs(sidebarWidth - expandedWidth) < 50) {
-      setSidebarWidth(expandedWidth);
+      // Snap to expanded width if close
+      if (Math.abs(sidebarWidth - expandedWidth) < 50) {
+        setSidebarWidth(expandedWidth);
+      }
     }
   };
 
@@ -94,8 +89,16 @@ export default function SpotifyClone() {
     if (isResizing) {
       const newWidth = Math.max(minWidth, Math.min(e.clientX, maxWidth));
 
-      // During active dragging, just update width without changing collapse state
+      // Update width
       setSidebarWidth(newWidth);
+
+      // Immediately update collapsed state based on width
+      // This prevents the "stuck in the middle" state
+      if (newWidth < collapseThreshold && !isCollapsed) {
+        setIsCollapsed(true);
+      } else if (newWidth >= collapseThreshold && isCollapsed) {
+        setIsCollapsed(false);
+      }
     }
   };
 
