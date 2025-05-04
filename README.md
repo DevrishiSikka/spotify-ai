@@ -164,6 +164,3 @@ This project is open source under the [MIT License].
 
 Questions, ideas, or feedback? Reach out at: **[devrishisikka@gmail.com](mailto:devrishisikka@gmail.com)**
 
----
-
-Would you like a visual version of this README for your GitHub landing page or portfolio site?
