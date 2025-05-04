@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/tooltip";
 import PlaylistHeaderArtwork from "@/components/PlaylistHeaderArtwork";
 import LoadingScreen from "@/components/LoadingScreen";
+import { motion, AnimatePresence } from "framer-motion";
+import AudioWaveform from "@/components/AudioWaveform";
 
 export default function SpotifyClone() {
   const [showMoodSearch, setShowMoodSearch] = useState(false);
@@ -43,12 +45,14 @@ export default function SpotifyClone() {
   const [playlistArtwork, setPlaylistArtwork] = useState({});
   const [songsWithArt, setSongsWithArt] = useState(songs);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const minWidth = 80; // Minimum width before collapsing
   const maxWidth = 500; // Increased from 400 to 500
   const collapseThreshold = 300; // Width threshold to trigger auto-collapse
   const collapsedWidth = 64; // Fixed width when collapsed
   const expandedWidth = 400; // Increased from 320 to 400
   const sidebarRef = useRef(null);
+  const fullscreenPlayerRef = useRef(null); // Add this at the top with other refs
 
   const toggleMoodSearch = () => {
     setShowMoodSearch(!showMoodSearch);
@@ -105,6 +109,55 @@ export default function SpotifyClone() {
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
     setSidebarWidth(isCollapsed ? expandedWidth : collapsedWidth);
+  };
+
+  const toggleFullScreen = () => {
+    if (!isFullScreen) {
+      setIsFullScreen(true);
+      
+      // Use setTimeout to ensure the DOM element is rendered before requesting fullscreen
+      setTimeout(() => {
+        const fullscreenElement = fullscreenPlayerRef.current;
+        
+        if (fullscreenElement) {
+          console.log("Requesting fullscreen on element:", fullscreenElement);
+          
+          try {
+            if (fullscreenElement.requestFullscreen) {
+              fullscreenElement.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
+            } else if (fullscreenElement.mozRequestFullScreen) {
+              fullscreenElement.mozRequestFullScreen();
+            } else if (fullscreenElement.webkitRequestFullscreen) {
+              fullscreenElement.webkitRequestFullscreen();
+            } else if (fullscreenElement.msRequestFullscreen) {
+              fullscreenElement.msRequestFullscreen();
+            } else {
+              console.error("No fullscreen API available");
+            }
+          } catch (error) {
+            console.error("Error entering fullscreen:", error);
+          }
+        } else {
+          console.error("Fullscreen element not found");
+        }
+      }, 100); // Small delay to ensure element is in the DOM
+    } else {
+      setIsFullScreen(false);
+      
+      try {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      } catch (error) {
+        console.error("Error exiting fullscreen:", error);
+      }
+    }
   };
 
   useEffect(() => {
@@ -208,6 +261,34 @@ export default function SpotifyClone() {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      // If fullscreen was exited, update our state to match
+      if (!document.fullscreenElement && 
+          !document.webkitFullscreenElement && 
+          !document.mozFullScreenElement && 
+          !document.msFullscreenElement) {
+        if (isFullScreen) {
+          console.log("Fullscreen was exited externally, updating state");
+          setIsFullScreen(false);
+        }
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+    };
+  }, [isFullScreen]); // Add isFullScreen as a dependency
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -706,9 +787,260 @@ export default function SpotifyClone() {
           <div className="w-24 h-1 bg-[#4d4d4d] rounded-full">
             <div className="w-3/4 h-full bg-white rounded-full"></div>
           </div>
-          <Maximize2 className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+          <Maximize2
+            className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer"
+            onClick={toggleFullScreen}
+          />
         </div>
       </div>
+
+      {/* Full screen player with enhanced animations */}
+      <AnimatePresence mode="wait">
+        {isFullScreen && (
+          <motion.div
+            ref={fullscreenPlayerRef}
+            id="fullscreen-player"
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: 1,
+              transition: { duration: 0.3 },
+            }}
+            exit={{
+              opacity: 0,
+              transition: { duration: 0.2 },
+            }}
+            className="fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden p-0 m-0 bg-black"
+            style={{
+              backgroundImage: `url(${songsWithArt[0]?.image || "/placeholder.svg"})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            {/* Dark overlay with gradient for readability */}
+            <div
+              className="absolute inset-0 z-0"
+              style={{
+                backdropFilter: "blur(100px)",
+                background:
+                  "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%)",
+              }}
+            />
+
+            {/* Content positioned above the background */}
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Top bar with logo and time */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: { delay: 0.1, duration: 0.4 },
+                }}
+                exit={{ opacity: 0, y: -10 }}
+                className="w-full flex justify-between items-center p-6"
+              >
+                {/* Close button */}
+                <button
+                  className="absolute top-6 left-6 text-white/70 hover:text-white transition-colors"
+                  onClick={toggleFullScreen}
+                  aria-label="Close full screen"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+
+                {/* Spotify logo */}
+                <div className="flex-1 flex justify-center items-center">
+                  <svg viewBox="0 0 24 24" width="36" height="36" fill="white">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.48.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                  </svg>
+                </div>
+
+                {/* Clock - increased size */}
+                <div className="text-white text-3xl font-medium">
+                  {new Date().toLocaleString("en-US", {
+                    hour: "numeric",
+                    minute: "numeric",
+                    hour12: true,
+                  })}
+                </div>
+              </motion.div>
+
+              {/* Rest of full-screen content */}
+              <div className="flex-1 flex items-center justify-center px-12">
+                <div className="flex items-center gap-24 max-w-6xl w-full">
+                  {/* Album Cover with animation */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -50, rotateY: "10deg" }}
+                    animate={{
+                      opacity: 1,
+                      x: 0,
+                      rotateY: "0deg",
+                      transition: {
+                        delay: 0.2,
+                        duration: 0.6,
+                        type: "spring",
+                        stiffness: 100,
+                      },
+                    }}
+                    exit={{ opacity: 0, x: -30, transition: { duration: 0.3 } }}
+                    className="rounded-2xl overflow-hidden border-4 border-[#202020] transform-gpu"
+                  >
+                    <div className="w-96 h-96">
+                      <Image
+                        src={songsWithArt[0]?.image || "/placeholder.svg"}
+                        alt={songsWithArt[0]?.title || "Album Cover"}
+                        width={400}
+                        height={400}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Song Info and Progress Bar with staggered animation */}
+                  <div className="flex-1 flex flex-col justify-center">
+                    {/* Song Title */}
+                    <motion.h1
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: { delay: 0.3, duration: 0.5 },
+                      }}
+                      exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+                      className="text-7xl font-bold text-white mb-4"
+                    >
+                      {songsWithArt[0]?.title || "Haseen"}
+                    </motion.h1>
+
+                    {/* Artists */}
+                    <motion.h2
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: { delay: 0.4, duration: 0.5 },
+                      }}
+                      exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+                      className="text-3xl font-normal text-white/80 mb-12"
+                    >
+                      {songsWithArt[0]?.artist ||
+                        "Talwiinder, NDS, Rippy Grewal"}
+                    </motion.h2>
+
+                    {/* Progress Bar */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        transition: { delay: 0.5, duration: 0.5 },
+                      }}
+                      exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                      className="w-full mt-auto flex justify-center"
+                    >
+                      <div className="w-11/12 max-w-4xl">
+                        <div className="w-full h-2 bg-[#3B3B3B] rounded-full mb-4">
+                          <motion.div
+                            initial={{ width: "0%" }}
+                            animate={{
+                              width: "10%",
+                              transition: { delay: 0.6, duration: 0.8 },
+                            }}
+                            className="h-full bg-[#1ED760] rounded-full"
+                          />
+                        </div>
+                        <div className="flex justify-between text-white/70 text-lg">
+                          <div>0:25</div>
+                          <div>-2:56</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls at bottom with animation */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  transition: { delay: 0.5, duration: 0.5 },
+                }}
+                exit={{ opacity: 0, y: 20, transition: { duration: 0.2 } }}
+                className="flex justify-center items-center gap-16 pb-16"
+              >
+                {/* Previous Button */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-white"
+                >
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                    <line x1="5" y1="20" x2="5" y2="4"></line>
+                  </svg>
+                </motion.button>
+
+                {/* Pause Button (shows white circle) */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-white w-20 h-20 rounded-full flex items-center justify-center"
+                >
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="black"
+                    stroke="none"
+                  >
+                    <rect x="7" y="6" width="3" height="12" rx="1"></rect>
+                    <rect x="14" y="6" width="3" height="12" rx="1"></rect>
+                  </svg>
+                </motion.button>
+
+                {/* Next Button */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="text-white"
+                >
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                    <line x1="19" y1="4" x2="19" y2="20"></line>
+                  </svg>
+                </motion.button>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
