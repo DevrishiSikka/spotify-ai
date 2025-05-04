@@ -3,22 +3,22 @@ import { motion } from "framer-motion";
 import albumArt from "album-art";
 
 const useGeminiPlaylist = () => {
-  const [userMood, setUserMood] = useState("");
-  const [inputValue, setInputValue] = useState("");
-  const [playlist, setPlaylist] = useState([]);
-  const [error, setError] = useState(null);
-  const [showResults, setShowResults] = useState(false);
-  const [isLoadingArtwork, setIsLoadingArtwork] = useState(false);
-  const [playlistName, setPlaylistName] = useState("");
-  const [isGeneratingName, setIsGeneratingName] = useState(false);
+  const [userMood, setUserMood] = useState<string>("");
+  const [inputValue, setInputValue] = useState<string>("");
+  const [playlist, setPlaylist] = useState<any[]>([]);
+  const [error, setError] = useState<Error | null>(null);
+  const [showResults, setShowResults] = useState<boolean>(false);
+  const [isLoadingArtwork, setIsLoadingArtwork] = useState<boolean>(false);
+  const [playlistName, setPlaylistName] = useState<string>("");
+  const [isGeneratingName, setIsGeneratingName] = useState<boolean>(false);
 
   // Function to generate playlist name
-  const fetchPlaylistName = async (mood) => {
+  const fetchPlaylistName = async (mood: string) => {
     setIsGeneratingName(true);
     try {
       console.log("Generating playlist name for mood:", mood);
       
-      const res = await fetch("https://spotify-gemini-backend.onrender.com/api/generate-name", {
+      const res = await fetch("https://dcpzr4ju26.execute-api.ap-south-1.amazonaws.com/spotify-dev/api/generate-name", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -49,8 +49,8 @@ const useGeminiPlaylist = () => {
     }
   };
 
-  const fetchPlaylist = async () => {
-    const url = "https://spotify-gemini-backend.onrender.com/api/generate";
+  const fetchPlaylist = async (): Promise<void> => {
+    const url = "https://dcpzr4ju26.execute-api.ap-south-1.amazonaws.com/spotify-dev/api/generate";
 
     try {
       console.log("Sending request to API with prompt:", userMood);
@@ -86,7 +86,7 @@ const useGeminiPlaylist = () => {
           setIsLoadingArtwork(true);
           
           const songsWithArt = await Promise.all(
-            data.songs.map(async (song) => {
+            data.songs.map(async (song: any) => {
               try {
                 const artUrl = await albumArt(song.artist, { album: song.album, size: 'large' });
                 return { ...song, albumArt: artUrl };
@@ -111,7 +111,7 @@ const useGeminiPlaylist = () => {
       setIsLoadingArtwork(true);
       
       const songsWithArt = await Promise.all(
-        data.map(async (song) => {
+        data.map(async (song: any) => {
           try {
             const artUrl = await albumArt(song.artist, { album: song.album, size: 'large' });
             return { ...song, albumArt: artUrl };
@@ -128,12 +128,12 @@ const useGeminiPlaylist = () => {
       setShowResults(true);
     } catch (err) {
       console.error("Error fetching playlist:", err);
-      setError(err);
+      setError(err as Error);
       setIsLoadingArtwork(false);
     }
   };
 
-  const handleKeyPress = (event) => {
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && inputValue.trim() !== "") {
       setUserMood(inputValue);
     }
@@ -159,7 +159,14 @@ const useGeminiPlaylist = () => {
   };
 };
 
-const GeminiPlaylistComponent = ({ playlist, showResults, userMood, playlistName }) => {
+interface GeminiPlaylistComponentProps {
+  playlist: any[];
+  showResults: boolean;
+  userMood: string;
+  playlistName: string;
+}
+
+const GeminiPlaylistComponent = ({ playlist, showResults, userMood, playlistName }: GeminiPlaylistComponentProps) => {
   if (showResults && playlist.length > 0) {
     return (
       <div className="min-h-screen w-full flex flex-col bg-[#121212] text-white">
