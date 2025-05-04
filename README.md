@@ -55,11 +55,11 @@ A reimagined Spotify web experience, supercharged with AI capabilities. Designed
 
 Include screenshots to bring the experience to life:
 
-1. Main dashboard with AI playlist creation
-2. Fullscreen audio player with dynamic visuals
-3. Sidebar in expanded and collapsed states
-4. Song-saving animation in action
-5. AI prompt templates interface
+<img width="1511" alt="image" src="https://github.com/user-attachments/assets/bd615467-b106-4879-be38-f5349bc30157" />
+<img width="1510" alt="image" src="https://github.com/user-attachments/assets/033e33e9-4401-4749-87b7-213d32fb5a70" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/7a0da081-cef8-45b6-9c83-71acccc49642" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/f343ba96-5bb5-40e3-aa7c-c0a522641200" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/a33efa1f-b5b4-4916-827b-33e95ab6837b" />
 
 ---
 
@@ -93,10 +93,12 @@ Include screenshots to bring the experience to life:
 ## Tech Stack
 
 * **Frontend Framework**: Next.js, React, TypeScript
+* **Backend**: Flask
 * **Styling**: Tailwind CSS
 * **Animation**: Framer Motion
 * **Icons**: Lucide React
 * **Deployment**: Vercel
+
 
 ---
 
@@ -104,7 +106,7 @@ Include screenshots to bring the experience to life:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/spotify-ai.git
+git clone https://github.com/devrishisikka/spotify-ai.git
 
 # Navigate to project folder
 cd spotify-ai
@@ -117,6 +119,9 @@ npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
+> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
 
 ---
 
@@ -145,7 +150,7 @@ Have ideas or improvements? Open a pull request or create an issue. We welcome a
 
 ## License
 
-This project is open source under the [MIT License](LICENSE).
+This project is open source under the [MIT License].
 
 ---
 
