@@ -93,10 +93,12 @@ Include screenshots to bring the experience to life:
 ## Tech Stack
 
 * **Frontend Framework**: Next.js, React, TypeScript
+* **Backend**: Flask
 * **Styling**: Tailwind CSS
 * **Animation**: Framer Motion
 * **Icons**: Lucide React
 * **Deployment**: Vercel
+
 
 ---
 
@@ -117,6 +119,9 @@ npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
+
+> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
+> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
 
 ---
 
