@@ -6,7 +6,7 @@ A reimagined Spotify web experience, supercharged with AI capabilities. Designed
 
 > ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
 > If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
-
+> If there is n error during the generation, please click on try again and generate the playlist again as the backend can sometime take some time to properly fire up. 
 ---
 
 ## Features That Set Us Apart
