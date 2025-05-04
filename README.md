@@ -1,11 +1,12 @@
-Absolutely — here's your **fully updated and clean README**, with the comparison table revised (removing the "Fixed sidebar" row) and all previous enhancements included, minus any emojis:
-
----
-
 # Spotify AI – The Future of Music Listening
 
 A reimagined Spotify web experience, supercharged with AI capabilities. Designed and built during the **Level Up: Vibe Coding Hackathon**, this project blends innovation, design, and personalization to elevate the way you discover and enjoy music.
 
+---
+
+> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
+> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
+> If there is n error during the generation, please click on try again and generate the playlist again as the backend can sometime take some time to properly fire up. 
 ---
 
 ## Features That Set Us Apart
@@ -120,9 +121,6 @@ npm run dev
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
-> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
-
 ---
 
 ## Project Structure
@@ -166,6 +164,3 @@ This project is open source under the [MIT License].
 
 Questions, ideas, or feedback? Reach out at: **[devrishisikka@gmail.com](mailto:devrishisikka@gmail.com)**
 
----
-
-Would you like a visual version of this README for your GitHub landing page or portfolio site?
