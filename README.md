@@ -104,7 +104,7 @@ Include screenshots to bring the experience to life:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/spotify-ai.git
+git clone https://github.com/devrishisikka/spotify-ai.git
 
 # Navigate to project folder
 cd spotify-ai
@@ -145,7 +145,7 @@ Have ideas or improvements? Open a pull request or create an issue. We welcome a
 
 ## License
 
-This project is open source under the [MIT License](LICENSE).
+This project is open source under the [MIT License].
 
 ---
 
