@@ -55,11 +55,11 @@ A reimagined Spotify web experience, supercharged with AI capabilities. Designed
 
 Include screenshots to bring the experience to life:
 
-1. Main dashboard with AI playlist creation
-2. Fullscreen audio player with dynamic visuals
-3. Sidebar in expanded and collapsed states
-4. Song-saving animation in action
-5. AI prompt templates interface
+<img width="1511" alt="image" src="https://github.com/user-attachments/assets/bd615467-b106-4879-be38-f5349bc30157" />
+<img width="1510" alt="image" src="https://github.com/user-attachments/assets/033e33e9-4401-4749-87b7-213d32fb5a70" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/7a0da081-cef8-45b6-9c83-71acccc49642" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/f343ba96-5bb5-40e3-aa7c-c0a522641200" />
+<img width="1512" alt="image" src="https://github.com/user-attachments/assets/a33efa1f-b5b4-4916-827b-33e95ab6837b" />
 
 ---
 
