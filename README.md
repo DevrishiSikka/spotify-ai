@@ -1,10 +1,11 @@
-Absolutely — here's your **fully updated and clean README**, with the comparison table revised (removing the "Fixed sidebar" row) and all previous enhancements included, minus any emojis:
-
----
-
 # Spotify AI – The Future of Music Listening
 
 A reimagined Spotify web experience, supercharged with AI capabilities. Designed and built during the **Level Up: Vibe Coding Hackathon**, this project blends innovation, design, and personalization to elevate the way you discover and enjoy music.
+
+---
+
+> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
+> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
 
 ---
 
@@ -119,9 +120,6 @@ npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) in your browser.
-
-> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
-> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
 
 ---
 
