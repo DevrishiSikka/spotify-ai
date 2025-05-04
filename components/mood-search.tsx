@@ -31,14 +31,14 @@ const MoodSearch = () => {
   const [showSaveMessage, setShowSaveMessage] = useState<number | null>(null);
 
   const premadePrompts = [
-    "Hindi Pop",
-    "ADHD Soothing",
-    "Workout Energy",
-    "Focus Flow",
-    "Bollywood Romance",
-    "Chill Vibes",
+    "Late Night Coding Vibes",
+    "Rainy Day Chill Beats",
+    "Golden Hour Indie Hits",
+    "Deep Focus Work Mode",
+    "Feel Good Morning Jams",
+    "Heartfelt Acoustic Love Songs",
   ];
-
+  
   const handlePromptClick = (prompt) => {
     setInputValue(prompt);
   };
@@ -408,13 +408,6 @@ const MoodSearch = () => {
 
             {/* Prompt chips - smaller - wider container */}
             <div className="w-full max-w-2xl mx-auto flex flex-wrap justify-center gap-2 mb-6">
-              <button
-                type="button"
-                className="flex items-center gap-1.5 bg-[#232323] text-white px-4 py-1.5 rounded-full font-medium text-xs hover:bg-[#282828] transition"
-                style={{ minWidth: 0 }}
-              >
-                <span role="img" aria-label="fire">🔥</span> Trending Now
-              </button>
               {premadePrompts.map((prompt) => (
                 <button
                   key={prompt}
