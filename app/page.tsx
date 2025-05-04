@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import albumArt from "album-art";
+import ColorThief from "colorthief";
 import {
   Search,
   Home,
@@ -46,6 +47,10 @@ export default function SpotifyClone() {
   const [songsWithArt, setSongsWithArt] = useState(songs);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [backgroundColors, setBackgroundColors] = useState<string[]>(['#000000', '#000000', '#000000', '#000000']);
+  const [animationKey, setAnimationKey] = useState(0);
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const colorThief = useRef(new ColorThief());
   const minWidth = 80; // Minimum width before collapsing
   const maxWidth = 500; // Increased from 400 to 500
   const collapseThreshold = 300; // Width threshold to trigger auto-collapse
@@ -53,10 +58,12 @@ export default function SpotifyClone() {
   const expandedWidth = 400; // Increased from 320 to 400
   const sidebarRef = useRef(null);
   const fullscreenPlayerRef = useRef(null); // Add this at the top with other refs
+  const [selectedPlaylistIndex, setSelectedPlaylistIndex] = useState<number>(5); // Default to "My Collection" playlist
 
   const toggleMoodSearch = () => {
-    setShowMoodSearch(!showMoodSearch);
+    setShowMoodSearch(true);
     setShowMoodResults(false);
+    setMoodQuery("");
   };
 
   const handleMoodSearch = (e) => {
@@ -111,54 +118,30 @@ export default function SpotifyClone() {
     setSidebarWidth(isCollapsed ? expandedWidth : collapsedWidth);
   };
 
-  const toggleFullScreen = () => {
-    if (!isFullScreen) {
-      setIsFullScreen(true);
-      
-      // Use setTimeout to ensure the DOM element is rendered before requesting fullscreen
-      setTimeout(() => {
-        const fullscreenElement = fullscreenPlayerRef.current;
-        
-        if (fullscreenElement) {
-          console.log("Requesting fullscreen on element:", fullscreenElement);
-          
-          try {
-            if (fullscreenElement.requestFullscreen) {
-              fullscreenElement.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
-            } else if (fullscreenElement.mozRequestFullScreen) {
-              fullscreenElement.mozRequestFullScreen();
-            } else if (fullscreenElement.webkitRequestFullscreen) {
-              fullscreenElement.webkitRequestFullscreen();
-            } else if (fullscreenElement.msRequestFullscreen) {
-              fullscreenElement.msRequestFullscreen();
-            } else {
-              console.error("No fullscreen API available");
-            }
-          } catch (error) {
-            console.error("Error entering fullscreen:", error);
-          }
-        } else {
-          console.error("Fullscreen element not found");
-        }
-      }, 100); // Small delay to ensure element is in the DOM
-    } else {
-      setIsFullScreen(false);
-      
+  const extractColorsFromImage = (imageUrl: string) => {
+    const img = new window.Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
       try {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          document.msExitFullscreen();
-        }
+        const colors = colorThief.current.getPalette(img, 4); // Get 4 colors instead of 2
+        const hexColors = colors.map((color: number[]) => 
+          `#${color.map((c: number) => c.toString(16).padStart(2, '0')).join('')}`
+        );
+        setBackgroundColors(hexColors);
+        setAnimationKey(prev => prev + 1); // Force animation restart
       } catch (error) {
-        console.error("Error exiting fullscreen:", error);
+        console.error("Error extracting colors:", error);
+        setBackgroundColors(['#000000', '#000000', '#000000', '#000000']);
       }
-    }
+    };
+    img.src = imageUrl;
   };
+
+  useEffect(() => {
+    if (isFullScreen && songsWithArt[currentSongIndex]?.image) {
+      extractColorsFromImage(songsWithArt[currentSongIndex].image);
+    }
+  }, [isFullScreen, currentSongIndex, songsWithArt]);
 
   useEffect(() => {
     document.addEventListener("mousemove", resize);
@@ -310,6 +293,55 @@ export default function SpotifyClone() {
     return gradients[index % gradients.length];
   };
 
+  const toggleFullScreen = () => {
+    if (!isFullScreen) {
+      setIsFullScreen(true);
+      
+      // Use setTimeout to ensure the DOM element is rendered before requesting fullscreen
+      setTimeout(() => {
+        const fullscreenElement = document.getElementById('fullscreen-player');
+        
+        if (fullscreenElement) {
+          console.log("Requesting fullscreen on element:", fullscreenElement);
+          
+          try {
+            if (fullscreenElement.requestFullscreen) {
+              fullscreenElement.requestFullscreen().catch((err: Error) => console.error("Fullscreen error:", err));
+            } else if ((fullscreenElement as any).mozRequestFullScreen) {
+              (fullscreenElement as any).mozRequestFullScreen();
+            } else if ((fullscreenElement as any).webkitRequestFullscreen) {
+              (fullscreenElement as any).webkitRequestFullscreen();
+            } else if ((fullscreenElement as any).msRequestFullscreen) {
+              (fullscreenElement as any).msRequestFullscreen();
+            } else {
+              console.error("No fullscreen API available");
+            }
+          } catch (error) {
+            console.error("Error entering fullscreen:", error);
+          }
+        } else {
+          console.error("Fullscreen element not found");
+        }
+      }, 100); // Small delay to ensure element is in the DOM
+    } else {
+      setIsFullScreen(false);
+      
+      try {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          (document as any).mozCancelFullScreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          (document as any).msExitFullscreen();
+        }
+      } catch (error) {
+        console.error("Error exiting fullscreen:", error);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-black text-white">
       {/* Navbar - now spans the full width, fixed at the top */}
@@ -432,7 +464,14 @@ export default function SpotifyClone() {
                   <TooltipProvider key={index} delayDuration={100}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className="w-10 h-10 rounded-md overflow-hidden cursor-pointer">
+                        <div 
+                          className="w-10 h-10 rounded-md overflow-hidden cursor-pointer"
+                          onClick={() => {
+                            setSelectedPlaylistIndex(index);
+                            setShowMoodSearch(false);
+                            setShowMoodResults(false);
+                          }}
+                        >
                           {playlistArtwork[index] ? (
                             <Image
                               src={playlistArtwork[index]}
@@ -570,6 +609,11 @@ export default function SpotifyClone() {
                   <div
                     key={index}
                     className="flex items-center gap-3 p-2 pl-4 hover:bg-[#232323] rounded-md cursor-pointer"
+                    onClick={() => {
+                      setSelectedPlaylistIndex(index);
+                      setShowMoodSearch(false);
+                      setShowMoodResults(false);
+                    }}
                   >
                     <div className="w-12 h-12 flex-shrink-0 relative rounded-md overflow-hidden">
                       {playlistArtwork[index] ? (
@@ -579,12 +623,10 @@ export default function SpotifyClone() {
                           fill
                           className="object-cover"
                           onError={(e) => {
-                            // Fallback if image fails to load
                             e.currentTarget.src = "/placeholder.svg";
                           }}
                         />
                       ) : (
-                        // Gradient fallback
                         <div
                           className={`w-full h-full ${getRandomGradient(index)}`}
                         />
@@ -611,12 +653,15 @@ export default function SpotifyClone() {
           />
         </div>
 
+        {/* Add gap between sidebar and main content */}
+        <div className="w-2" />
+
         {/* Main Content */}
-        <div className="flex-1 flex flex-col ml-2">
+        <div className="flex-1 flex flex-col">
           {/* Existing Content */}
           <div className="flex-1 overflow-hidden rounded-md">
             <div className="flex flex-1 overflow-hidden">
-              {/* Scrollable Liked Songs Section */}
+              {/* Scrollable Playlist Section */}
               <div className="flex-1 overflow-y-auto bg-black">
                 {showMoodSearch ? (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
@@ -629,107 +674,163 @@ export default function SpotifyClone() {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    {/* Playlist header */}
-                    <div className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-md">
-                      <div className="px-8 flex items-end gap-6">
-                        {/* Playlist Header Artwork */}
-                        <PlaylistHeaderArtwork />
-                        <div>
-                          <div className="text-xs mb-1">Playlist</div>
-                          <h1 className="text-8xl font-extrabold mb-3 leading-tight tracking-tight">
-                            Liked Songs
-                          </h1>
-                          <div className="flex items-center gap-1 text-xs">
-                            <div className="w-6 h-6 rounded-full overflow-hidden">
-                              <Image
-                                src="https://avatar.iran.liara.run/public/25"
-                                alt="Profile"
-                                width={24}
-                                height={24}
-                              />
-                            </div>
-                            <span className="font-bold">Devrishi Sikka</span>
-                            <span className="text-gray-400">• 2,970 songs</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Playlist controls */}
-                    <div className="flex items-center gap-6 mb-6 px-4">
-                      <div className="w-14 h-14 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
-                        <Play className="w-7 h-7 text-black fill-black ml-1" />
-                      </div>
-                      <CircleArrowDown className="w-9 h-9 text-gray-400 hover:text-white cursor-pointer" />
-                      <div className="ml-auto flex items-center gap-4">
-                        <Search className="w-5 h-5 text-gray-400" />
-                        <div className="text-sm text-gray-400">List</div>
-                        <ListMusic className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-
-                    {/* Songs table */}
-                    <div className="w-full">
-                      {/* Table header - Update alignment */}
-                      <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-4 py-2 text-sm text-gray-400 font-semibold">
-                        <div className="text-center">#</div>
-                        <div>Title</div>
-                        <div>Album</div>
-                        <div>Date added</div>
-                        <div className="flex justify-end pr-2">
-                          <Clock className="w-5 h-5" />
-                        </div>
-                      </div>
-                      {/* Table rows - Update alignment */}
-                      <div
-                        className="overflow-y-auto max-h-[calc(100vh-360px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
-                        style={{ paddingBottom: "120px" }}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={selectedPlaylistIndex}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="w-full"
+                    >
+                      {/* Playlist header */}
+                      <motion.div 
+                        className="bg-gradient-to-b from-purple-800 to-black pt-4 pb-3 rounded-md"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
                       >
-                        {songsWithArt.map((song, index) => (
-                          <div
-                            key={index}
-                            className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center group"
+                        <motion.div 
+                          className="px-6 flex items-end gap-6"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.2 }}
+                        >
+                          {/* Playlist Header Artwork */}
+                          <motion.div 
+                            className="w-48 h-48 min-w-[12rem] min-h-[12rem] bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center shadow-lg rounded-md"
+                            initial={{ scale: 0.9, rotate: -5 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ duration: 0.3, delay: 0.3 }}
                           >
-                            <div className="text-gray-400 relative flex justify-center">
-                              <span className="group-hover:opacity-0 absolute">
-                                {index + 1}
-                              </span>
-                              <div className="opacity-0 group-hover:opacity-100">
-                                <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                            {playlistArtwork[selectedPlaylistIndex] ? (
+                              <Image
+                                src={playlistArtwork[selectedPlaylistIndex]}
+                                alt={`${libraryItems[selectedPlaylistIndex].title} cover`}
+                                width={192}
+                                height={192}
+                                className="object-cover rounded-md"
+                              />
+                            ) : (
+                              <div className={`w-full h-full ${getRandomGradient(selectedPlaylistIndex)}`} />
+                            )}
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: 0.4 }}
+                          >
+                            <div className="text-xs mb-1">Playlist</div>
+                            <h1 className="text-8xl font-extrabold mb-3 leading-tight tracking-tight">
+                              {libraryItems[selectedPlaylistIndex].title}
+                            </h1>
+                            <div className="flex items-center gap-1 text-xs">
+                              <div className="w-6 h-6 rounded-full overflow-hidden">
                                 <Image
-                                  src={song.image}
-                                  alt={`${song.album} cover`}
-                                  fill
-                                  className="object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.src = "/placeholder.svg";
-                                  }}
+                                  src="https://avatar.iran.liara.run/public/25"
+                                  alt="Profile"
+                                  width={24}
+                                  height={24}
                                 />
                               </div>
-                              <div>
-                                <div className="font-medium">{song.title}</div>
-                                <div className="text-gray-400 text-xs">
-                                  {song.artist}
+                              <span className="font-bold">Devrishi Sikka</span>
+                              <span className="text-gray-400">• {libraryItems[selectedPlaylistIndex].subtitle}</span>
+                            </div>
+                          </motion.div>
+                        </motion.div>
+                      </motion.div>
+
+                      {/* Playlist controls */}
+                      <motion.div 
+                        className="flex items-center gap-6 mb-6 px-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.5 }}
+                      >
+                        <div className="w-14 h-14 rounded-full bg-[#1ed760] flex items-center justify-center shadow-lg">
+                          <Play className="w-7 h-7 text-black fill-black ml-1" />
+                        </div>
+                        <CircleArrowDown className="w-9 h-9 text-gray-400 hover:text-white cursor-pointer" />
+                        <div className="ml-auto flex items-center gap-4">
+                          <Search className="w-5 h-5 text-gray-400" />
+                          <div className="text-sm text-gray-400">List</div>
+                          <ListMusic className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </motion.div>
+
+                      {/* Songs table */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 0.6 }}
+                      >
+                        {/* Table header */}
+                        <div className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 border-b border-[#2a2a2a] px-4 py-2 text-sm text-gray-400 font-semibold">
+                          <div className="text-center">#</div>
+                          <div>Title</div>
+                          <div>Album</div>
+                          <div>Date added</div>
+                          <div className="flex justify-end pr-2">
+                            <Clock className="w-5 h-5" />
+                          </div>
+                        </div>
+                        {/* Table rows */}
+                        <motion.div
+                          className="overflow-y-auto max-h-[calc(100vh-360px)] scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900"
+                          style={{ paddingBottom: "120px" }}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.7 }}
+                        >
+                          {songsWithArt.map((song, index) => (
+                            <motion.div
+                              key={index}
+                              className="grid grid-cols-[40px_1.5fr_1.2fr_1fr_80px] gap-4 px-4 py-2 hover:bg-[#2a2a2a] rounded-md text-sm items-center group cursor-pointer"
+                              onClick={() => setCurrentSongIndex(index)}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: 0.8 + index * 0.02 }}
+                            >
+                              <div className="text-gray-400 relative flex justify-center">
+                                <span className="group-hover:opacity-0 absolute">
+                                  {index + 1}
+                                </span>
+                                <div className="opacity-0 group-hover:opacity-100">
+                                  <Play className="w-4 h-4 text-white fill-white cursor-pointer" />
                                 </div>
                               </div>
-                            </div>
-                            <div className="text-gray-400">{song.album}</div>
-                            <div className="text-gray-400">
-                              {song.dateAdded}
-                            </div>
-                            <div className="text-gray-400 flex justify-end pr-2">
-                              {song.duration}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 relative overflow-hidden rounded-sm">
+                                  <Image
+                                    src={song.image}
+                                    alt={`${song.album} cover`}
+                                    fill
+                                    className="object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.src = "/placeholder.svg";
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-medium">{song.title}</div>
+                                  <div className="text-gray-400 text-xs">
+                                    {song.artist}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-gray-400">{song.album}</div>
+                              <div className="text-gray-400">
+                                {song.dateAdded}
+                              </div>
+                              <div className="text-gray-400 flex justify-end pr-2">
+                                {song.duration}
+                              </div>
+                            </motion.div>
+                          ))}
+                        </motion.div>
+                      </motion.div>
+                    </motion.div>
+                  </AnimatePresence>
                 )}
               </div>
             </div>
@@ -738,25 +839,41 @@ export default function SpotifyClone() {
       </div>
 
       {/* Player bar - positioned absolutely to span full width */}
-      <div className="h-20 bg-[#181818] border-t border-[#282828] flex items-center px-8 w-full fixed bottom-0 left-0 right-0">
+      <motion.div 
+        className="h-20 bg-[#181818] border-t border-[#282828] flex items-center px-8 w-full fixed bottom-0 left-0 right-0"
+        initial={{ opacity: 1, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         <div className="flex items-center gap-3 w-80">
           {/* Album cover for the currently playing song */}
-          <div className="w-14 h-14 relative rounded-md overflow-hidden">
+          <motion.div 
+            className="w-14 h-14 relative rounded-md overflow-hidden"
+            key={currentSongIndex}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
             <Image
-              src={songsWithArt[0]?.image || "/placeholder.svg"}
-              alt={songsWithArt[0]?.title || "Now playing"}
+              src={songsWithArt[currentSongIndex]?.image || "/placeholder.svg"}
+              alt={songsWithArt[currentSongIndex]?.title || "Now playing"}
               fill
               className="object-cover"
             />
-          </div>
-          <div>
+          </motion.div>
+          <motion.div
+            key={`${currentSongIndex}-info`}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
             <div className="font-medium text-sm">
-              {songsWithArt[0]?.title || "Plain Sight"}
+              {songsWithArt[currentSongIndex]?.title || "Plain Sight"}
             </div>
             <div className="text-xs text-gray-400">
-              {songsWithArt[0]?.artist || "ansh"}
+              {songsWithArt[currentSongIndex]?.artist || "ansh"}
             </div>
-          </div>
+          </motion.div>
           <Heart className="w-4 h-4 text-[#1ed760] fill-[#1ed760] ml-4" />
         </div>
 
@@ -792,13 +909,12 @@ export default function SpotifyClone() {
             onClick={toggleFullScreen}
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* Full screen player with enhanced animations */}
       <AnimatePresence mode="wait">
         {isFullScreen && (
           <motion.div
-            ref={fullscreenPlayerRef}
             id="fullscreen-player"
             initial={{ opacity: 0 }}
             animate={{
@@ -809,21 +925,93 @@ export default function SpotifyClone() {
               opacity: 0,
               transition: { duration: 0.2 },
             }}
-            className="fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden p-0 m-0 bg-black"
-            style={{
-              backgroundImage: `url(${songsWithArt[0]?.image || "/placeholder.svg"})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }}
+            className="fixed inset-0 z-[9999] flex flex-col w-screen h-screen overflow-hidden p-0 m-0"
           >
+            {/* Animated background with extracted colors */}
+            <motion.div
+              key={animationKey}
+              className="absolute inset-0 z-0"
+              style={{
+                backgroundImage: `linear-gradient(45deg, ${backgroundColors[0]}, ${backgroundColors[1]}, ${backgroundColors[2]}, ${backgroundColors[3]}, ${backgroundColors[0]})`,
+                backgroundSize: '400% 400%',
+              }}
+              animate={{
+                backgroundPosition: [
+                  '0% 0%',
+                  '100% 0%',
+                  '100% 100%',
+                  '0% 100%',
+                  '0% 0%'
+                ],
+              }}
+              transition={{
+                duration: 30,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear",
+                times: [0, 0.25, 0.5, 0.75, 1]
+              }}
+            />
+
+            {/* Animated overlay with different gradient */}
+            <motion.div
+              className="absolute inset-0 z-0"
+              style={{
+                backgroundImage: `linear-gradient(135deg, ${backgroundColors[2]}, ${backgroundColors[0]}, ${backgroundColors[3]}, ${backgroundColors[1]}, ${backgroundColors[2]})`,
+                backgroundSize: '400% 400%',
+                opacity: 0.4,
+                mixBlendMode: 'overlay',
+              }}
+              animate={{
+                backgroundPosition: [
+                  '100% 0%',
+                  '0% 0%',
+                  '0% 100%',
+                  '100% 100%',
+                  '100% 0%'
+                ],
+              }}
+              transition={{
+                duration: 25,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear",
+                times: [0, 0.25, 0.5, 0.75, 1]
+              }}
+            />
+
+            {/* Additional animated layer */}
+            <motion.div
+              className="absolute inset-0 z-0"
+              style={{
+                backgroundImage: `linear-gradient(90deg, ${backgroundColors[1]}, ${backgroundColors[3]}, ${backgroundColors[0]}, ${backgroundColors[2]}, ${backgroundColors[1]})`,
+                backgroundSize: '400% 400%',
+                opacity: 0.2,
+                mixBlendMode: 'soft-light',
+              }}
+              animate={{
+                backgroundPosition: [
+                  '0% 50%',
+                  '100% 50%',
+                  '0% 50%'
+                ],
+              }}
+              transition={{
+                duration: 20,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear",
+                times: [0, 0.5, 1]
+              }}
+            />
+
             {/* Dark overlay with gradient for readability */}
             <div
               className="absolute inset-0 z-0"
               style={{
                 backdropFilter: "blur(100px)",
                 background:
-                  "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%)",
+                  "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.7) 100%)",
               }}
             />
 
@@ -898,8 +1086,8 @@ export default function SpotifyClone() {
                   >
                     <div className="w-96 h-96">
                       <Image
-                        src={songsWithArt[0]?.image || "/placeholder.svg"}
-                        alt={songsWithArt[0]?.title || "Album Cover"}
+                        src={songsWithArt[currentSongIndex]?.image || "/placeholder.svg"}
+                        alt={songsWithArt[currentSongIndex]?.title || "Album Cover"}
                         width={400}
                         height={400}
                         className="object-cover w-full h-full"
@@ -909,48 +1097,47 @@ export default function SpotifyClone() {
 
                   {/* Song Info and Progress Bar with staggered animation */}
                   <div className="flex-1 flex flex-col justify-center">
-                    {/* Song Title */}
-                    <motion.h1
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: { delay: 0.3, duration: 0.5 },
-                      }}
-                      exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
-                      className="text-7xl font-bold text-white mb-4"
-                    >
-                      {songsWithArt[0]?.title || "Haseen"}
-                    </motion.h1>
+                    <div className="flex flex-col gap-4">
+                      {/* Song Title */}
+                      <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: { delay: 0.3, duration: 0.5 },
+                        }}
+                        exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+                        className="text-7xl font-bold text-white"
+                      >
+                        {songsWithArt[currentSongIndex]?.title || "Haseen"}
+                      </motion.h1>
 
-                    {/* Artists */}
-                    <motion.h2
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: { delay: 0.4, duration: 0.5 },
-                      }}
-                      exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
-                      className="text-3xl font-normal text-white/80 mb-12"
-                    >
-                      {songsWithArt[0]?.artist ||
-                        "Talwiinder, NDS, Rippy Grewal"}
-                    </motion.h2>
+                      {/* Artist Name */}
+                      <motion.h2
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: { delay: 0.4, duration: 0.5 },
+                        }}
+                        exit={{ opacity: 0, y: 10, transition: { duration: 0.2 } }}
+                        className="text-3xl font-normal text-white/80"
+                      >
+                        {songsWithArt[currentSongIndex]?.artist || "Talwiinder, NDS, Rippy Grewal"}
+                      </motion.h2>
 
-                    {/* Progress Bar */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        transition: { delay: 0.5, duration: 0.5 },
-                      }}
-                      exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                      className="w-full mt-auto flex justify-center"
-                    >
-                      <div className="w-11/12 max-w-4xl">
-                        <div className="w-full h-2 bg-[#3B3B3B] rounded-full mb-4">
+                      {/* Progress Bar */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: { delay: 0.5, duration: 0.5 },
+                        }}
+                        exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                        className="w-full max-w-2xl"
+                      >
+                        <div className="w-full h-2 bg-[#3B3B3B] rounded-full mb-2">
                           <motion.div
                             initial={{ width: "0%" }}
                             animate={{
@@ -964,8 +1151,8 @@ export default function SpotifyClone() {
                           <div>0:25</div>
                           <div>-2:56</div>
                         </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -979,7 +1166,7 @@ export default function SpotifyClone() {
                   transition: { delay: 0.5, duration: 0.5 },
                 }}
                 exit={{ opacity: 0, y: 20, transition: { duration: 0.2 } }}
-                className="flex justify-center items-center gap-16 pb-16"
+                className="flex justify-center items-center gap-16 pb-8 mt-8"
               >
                 {/* Previous Button */}
                 <motion.button
@@ -1069,7 +1256,7 @@ const libraryItems = [
   },
   { title: "daylist", subtitle: "Playlist • Spotify", image: "/placeholder.svg" },
   {
-    title: "Liked Songs",
+    title: "My Collection",
     subtitle: "Playlist • 2,970 songs",
     image: "/placeholder.svg",
   },
