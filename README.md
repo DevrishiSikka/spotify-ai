@@ -4,9 +4,16 @@ A reimagined Spotify web experience, supercharged with AI capabilities. Designed
 
 ---
 
-> ⚠️ **Note:** The backend API is hosted on [Render](https://render.com) using their free plan.  
-> If the API has been inactive for a while, it may take **50–60 seconds** to spin up the first time you access it. Please be patient!
-> If there is n error during the generation, please click on try again and generate the playlist again as the backend can sometime take some time to properly fire up. 
+## How to Use "the" AI Playlist Generator 
+
+Absolutely — here's a more polished and compelling version of your workflow with a confident, engaging tone:
+
+1. **Head to “AI Playlist Generator”** ( Green Button ) from the sidebar — your gateway to curated soundscapes.
+2. **Select a mood-driven prompt** or **craft your own vibe** in the input bar.
+3. Tap **“Generate Playlist”** and let the AI work its magic.
+4. Within moments, explore a **tailored playlist** built to match your energy.
+5. Love a track? **Hit the plus button** to save it. Changed your mind? **Tap again to remove.**
+
 ---
 
 ## Features That Set Us Apart
